@@ -1,0 +1,569 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mes coffres Fortnite</title>
+<style>
+  :root {
+    color-scheme: light;
+    --plane: #f9f9f7;
+    --surface: #fcfcfb;
+    --ink: #0b0b0b;
+    --ink-2: #52514e;
+    --muted: #6f6e69;
+    --grid: #e1e0d9;
+    --axis: #c3c2b7;
+    --ring: rgba(11, 11, 11, 0.10);
+    --series: #2a78d6;
+    --series-hover: #1c5cab;
+    --track: #cde2fb;
+    --critical: #d03b3b;
+    --wash: rgba(11, 11, 11, 0.05);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      color-scheme: dark;
+      --plane: #0d0d0d;
+      --surface: #1a1a19;
+      --ink: #f0efec;
+      --ink-2: #c3c2b7;
+      --muted: #989690;
+      --grid: #2c2c2a;
+      --axis: #383835;
+      --ring: rgba(255, 255, 255, 0.10);
+      --series: #3987e5;
+      --series-hover: #6da7ec;
+      --track: #184f95;
+      --critical: #d03b3b;
+      --wash: rgba(255, 255, 255, 0.07);
+    }
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--plane);
+    color: var(--ink);
+    font: 15px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  main { max-width: 980px; margin: 0 auto; padding: 24px 16px 40px; display: grid; gap: 16px; }
+  header h1 { font-size: 20px; font-weight: 600; margin: 0; }
+  header p { margin: 2px 0 0; color: var(--ink-2); font-size: 13px; }
+  .carte { background: var(--surface); border-radius: 12px; box-shadow: 0 0 0 1px var(--ring); padding: 18px; min-width: 0; }
+  .carte h2 { font-size: 15px; font-weight: 600; margin: 0; }
+  .sous-titre { margin: 2px 0 12px; color: var(--ink-2); font-size: 13px; }
+
+  .alerte { display: none; gap: 10px; align-items: flex-start; border-left: 4px solid var(--critical); }
+  .alerte.visible { display: flex; }
+  .alerte .icone { color: var(--critical); font-size: 18px; line-height: 1.2; }
+  .alerte strong { display: block; }
+  .alerte p { margin: 2px 0 0; color: var(--ink-2); font-size: 13px; }
+
+  .hero .libelle { color: var(--ink-2); font-size: 13px; }
+  .hero .valeur { font-size: 64px; font-weight: 650; line-height: 1.05; letter-spacing: -0.01em; }
+  .hero .note { color: var(--ink-2); font-size: 13px; margin: 6px 0 0; }
+  .jauge { margin-top: 14px; }
+  .jauge .piste { height: 8px; border-radius: 4px; background: var(--track); overflow: hidden; }
+  .jauge .rempli { height: 100%; border-radius: 4px; background: var(--series); }
+  .jauge .legende { margin: 6px 0 0; color: var(--ink-2); font-size: 13px; }
+
+  .filtres { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; }
+  .filtres label { color: var(--ink-2); font-size: 13px; display: inline-flex; gap: 6px; align-items: center; }
+  select, button {
+    font: inherit; color: var(--ink); background: var(--surface);
+    border: 0; box-shadow: 0 0 0 1px var(--ring); border-radius: 8px; padding: 6px 10px;
+  }
+  button { cursor: pointer; }
+  button:hover { background: var(--wash); }
+  :focus-visible { outline: 2px solid var(--series); outline-offset: 2px; }
+
+  .tuiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 16px; }
+  .tuile .libelle { color: var(--ink-2); font-size: 13px; }
+  .tuile .valeur { font-size: 28px; font-weight: 600; line-height: 1.2; margin-top: 2px; }
+  .tuile .detail { color: var(--ink-2); font-size: 13px; margin-top: 2px; }
+
+  .graphique { position: relative; }
+  .graphique svg { display: block; width: 100%; height: auto; overflow: visible; }
+  .graphique text { font-size: 11px; fill: var(--muted); font-variant-numeric: tabular-nums; }
+  .graphique .valeur-record { font-size: 12px; font-weight: 600; fill: var(--ink); }
+  .barre { fill: var(--series); }
+  .zone { fill: transparent; cursor: default; outline: none; }
+  .zone:hover + .barre, .zone:focus + .barre { fill: var(--series-hover); }
+  .zone:focus-visible { stroke: var(--series); stroke-width: 2px; }
+  .infobulle {
+    position: absolute; top: 0; left: 0; pointer-events: none; display: none; z-index: 2;
+    background: var(--surface); box-shadow: 0 0 0 1px var(--ring), 0 6px 18px rgba(0, 0, 0, 0.16);
+    border-radius: 8px; padding: 8px 10px; font-size: 13px; width: max-content; max-width: 240px;
+  }
+  .infobulle b { display: block; font-size: 15px; font-weight: 650; }
+  .infobulle span { display: block; color: var(--ink-2); }
+
+  .deux { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+  .defile { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; font-weight: 500; color: var(--ink-2); padding: 6px 8px; border-bottom: 1px solid var(--axis); white-space: nowrap; }
+  td { padding: 7px 8px; border-bottom: 1px solid var(--grid); white-space: nowrap; }
+  tr:last-child td { border-bottom: 0; }
+  .nb { text-align: right; font-variant-numeric: tabular-nums; }
+  td.fort { font-weight: 600; }
+  #plus { margin-top: 12px; }
+  .vide { color: var(--ink-2); font-size: 13px; padding: 16px 0; }
+
+  .note-carte { margin: 12px 0 0; color: var(--ink-2); font-size: 13px; }
+  .liste-lots { list-style: none; margin: 0; padding: 0; font-size: 13px; }
+  .liste-lots li { padding: 6px 0; border-bottom: 1px solid var(--grid); display: flex; justify-content: space-between; gap: 12px; }
+  .liste-lots li:last-child { border-bottom: 0; }
+  .liste-lots span { color: var(--ink-2); }
+  tr.non-compte td { color: var(--muted); }
+  footer { color: var(--ink-2); font-size: 13px; }
+  footer p { margin: 0 0 6px; }
+  footer strong { color: var(--ink); font-weight: 600; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Mes coffres Fortnite</h1>
+    <p id="maj"></p>
+  </header>
+
+  <section class="carte alerte" id="alerte" role="alert">
+    <span class="icone" aria-hidden="true">⚠</span>
+    <div><strong id="alerte-titre"></strong><p id="alerte-texte"></p></div>
+  </section>
+
+  <section class="carte hero">
+    <div class="libelle">Coffres au total</div>
+    <div class="valeur" id="total"></div>
+    <p class="note" id="calage"></p>
+    <div class="jauge" id="jauge">
+      <div class="piste"><div class="rempli" id="rempli"></div></div>
+      <p class="legende" id="jauge-legende"></p>
+    </div>
+  </section>
+
+  <div class="filtres">
+    <label>Période
+      <select id="periode">
+        <option value="tout">Tout</option>
+        <option value="30">30 derniers jours</option>
+        <option value="7">7 derniers jours</option>
+        <option value="jour">Aujourd'hui</option>
+      </select>
+    </label>
+    <label>Mode <select id="mode"></select></label>
+  </div>
+
+  <section class="tuiles" aria-label="Chiffres clés">
+    <div class="carte tuile"><div class="libelle">Moyenne par partie</div><div class="valeur" id="t-moyenne"></div><div class="detail" id="t-moyenne-d"></div></div>
+    <div class="carte tuile"><div class="libelle">Comptés dans les replays</div><div class="valeur" id="t-somme"></div><div class="detail" id="t-somme-d"></div></div>
+    <div class="carte tuile"><div class="libelle">Record en une partie</div><div class="valeur" id="t-record"></div><div class="detail" id="t-record-d"></div></div>
+    <div class="carte tuile"><div class="libelle">Coffres cassés détectés</div><div class="valeur" id="t-casses"></div><div class="detail" id="t-casses-d"></div></div>
+    <div class="carte tuile" id="tuile-escouade" hidden><div class="libelle">Total d'escouade</div><div class="valeur" id="t-escouade"></div><div class="detail" id="t-escouade-d"></div></div>
+  </section>
+
+  <div class="deux">
+    <section class="carte">
+      <h2>Tes chances</h2>
+      <p class="sous-titre" id="chances-sous-titre"></p>
+      <div class="defile"><table id="chances"></table></div>
+      <p class="note-carte" id="heure-tresor"></p>
+    </section>
+    <section class="carte">
+      <h2>Ta collection</h2>
+      <p class="sous-titre" id="semaine"></p>
+      <div id="collection"></div>
+      <p class="note-carte" id="autres"></p>
+    </section>
+  </div>
+
+  <section class="carte">
+    <h2>Coffres par partie</h2>
+    <p class="sous-titre" id="graph-sous-titre"></p>
+    <div class="graphique" id="graphique">
+      <div class="infobulle" id="infobulle" role="tooltip"></div>
+    </div>
+  </section>
+
+  <div class="deux">
+    <section class="carte">
+      <h2>Par mode</h2>
+      <p class="sous-titre">Du mode le plus joué au moins joué</p>
+      <div class="defile"><table id="par-mode"></table></div>
+    </section>
+    <section class="carte">
+      <h2>Par type de coffre</h2>
+      <p class="sous-titre">Coffres ouverts et cassés</p>
+      <div class="defile"><table id="par-type"></table></div>
+    </section>
+  </div>
+
+  <section class="carte">
+    <h2>Parties</h2>
+    <p class="sous-titre">De la plus récente à la plus ancienne</p>
+    <div class="defile"><table id="parties"></table></div>
+    <button id="plus" type="button"></button>
+  </section>
+
+  <footer>
+    <p><strong>Comment c'est compté.</strong> Après chaque partie, le programme lit le replay enregistré par Fortnite. Chaque coffre indique qui l'a fouillé : il compte comme ouvert quand c'est toi, y compris quand un coffre rechargé pendant la partie est rouvert. Quand un coffre est détruit, le replay indique aussi qui l'a cassé : en voiture si tu étais dans un véhicule, à pied sinon, le plus souvent à la pioche. Un coffre qui tombe parce que tu as cassé son support est retrouvé grâce à son butin, qui retombe à côté de toi. Seul le Battle Royale de la saison compte, avec ou sans construction : le classé, OG, Reload, les modes temporaires et le Créatif sont affichés mais pas comptés.</p>
+    <p><strong>Chances.</strong> Les chances par coffre sont celles publiées par Epic. Pendant les heures au trésor, certaines sont multipliées. Les chances sont calculées avec tous tes coffres, ouverts et cassés, plus ceux ajoutés à la main. Méthode et données reprises du projet libre ChestCounter (LED-N, licence MIT) ; ce compteur ne se connecte à rien.</p>
+    <p><strong>Précision.</strong> C'est une estimation. Lors des tests, l'écart avec la quête du jeu était d'environ 1 %. Si tu indiques ce que ta quête affiche, le total repart de cette valeur. La quête ne compte que les coffres ouverts : les coffres cassés s'ajoutent seulement au total. Seules les parties jouées sur ce PC avec les replays activés sont comptées. Une mise à jour de Fortnite peut casser la lecture : un message s'affiche alors en haut de cette page.</p>
+  </footer>
+</main>
+
+<script>const DONNEES = /*DONNEES*/null;</script>
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+const nf = new Intl.NumberFormat("fr-FR");
+const nf1 = new Intl.NumberFormat("fr-FR", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+const fDate = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+const fJour = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "short" });
+
+const NOMS_MODES = {
+  NoBuildBR_Solo: "Zero Build · Solo", NoBuildBR_Duo: "Zero Build · Duo",
+  NoBuildBR_Trio: "Zero Build · Trio", NoBuildBR_Squad: "Zero Build · Escouade",
+  DefaultSolo: "Battle Royale · Solo", DefaultDuo: "Battle Royale · Duo",
+  trios: "Battle Royale · Trio", DefaultSquad: "Battle Royale · Escouade",
+};
+const nomMode = m => NOMS_MODES[m] || m;
+const pluriel = (n, s, p) => nf.format(n) + " " + (n > 1 ? p : s);
+
+function lire(cle, defaut) { try { return sessionStorage.getItem(cle) ?? defaut; } catch { return defaut; } }
+function ecrire(cle, val) { try { sessionStorage.setItem(cle, val); } catch { /* facultatif */ } }
+
+const parties = DONNEES.parties.map(p => ({ ...p, date: new Date(p.fin) }));
+let toutAfficher = lire("tout", "0") === "1";
+
+function remplirEntete() {
+  $("maj").textContent = "Mis à jour le " + fDate.format(new Date(DONNEES.genereLe)) + " · comptage automatique";
+  $("total").textContent = nf.format(DONNEES.total);
+  if (!DONNEES.calage) {
+    // Quête non indiquée : le total est simplement tout ce que les replays contiennent.
+    const premiere = parties.length ? " depuis le " + fJour.format(parties[0].date) : "";
+    let phrase = "Coffres ouverts et cassés dans tes replays" + premiere;
+    if (!phrase.endsWith(".")) phrase += ".";
+    $("calage").textContent = phrase + (DONNEES.coffresAvant ? " Plus " + nf.format(DONNEES.coffresAvant) + " coffres d'avant le compteur, ajoutés à la main." : "") +
+      " Pour suivre ta quête, fais un clic droit sur le coffre près de l'horloge, puis « Indiquer où en est ma quête ».";
+    $("jauge").style.display = "none";
+  } else {
+    const depuis = DONNEES.quete - DONNEES.calage.valeur;
+    const casses = DONNEES.total - DONNEES.quete;
+    $("calage").textContent = nf.format(DONNEES.calage.valeur) + " sur ta quête le " + fDate.format(new Date(DONNEES.calage.date)) +
+      " + " + nf.format(depuis) + " ouverts depuis + " + nf.format(casses) + " cassés.";
+    const reste = DONNEES.objectif - DONNEES.quete;
+    if (reste > 0) {
+      $("rempli").style.width = (DONNEES.quete / DONNEES.objectif * 100) + "%";
+      $("jauge-legende").textContent = "Quête estimée : " + nf.format(DONNEES.quete) + " sur " + nf.format(DONNEES.objectif) + ". Encore environ " +
+        pluriel(reste, "coffre", "coffres") + " à ouvrir : les coffres cassés ne la font pas avancer.";
+    } else {
+      $("jauge").style.display = "none";
+      $("calage").textContent += " La quête s'arrête à " + nf.format(DONNEES.objectif) + " : ce compteur continue.";
+    }
+  }
+  const titres = [];
+  if (DONNEES.echecs.length) titres.push(pluriel(DONNEES.echecs.length, "replay illisible", "replays illisibles"));
+  if (DONNEES.suspectes) titres.push(pluriel(DONNEES.suspectes, "partie mal lue", "parties mal lues"));
+  if (titres.length) {
+    $("alerte").classList.add("visible");
+    $("alerte-titre").textContent = "Attention : " + titres.join(" et ");
+    $("alerte-texte").textContent = DONNEES.suspectes
+      ? "Ces parties ne sont peut-être pas comptées. Une mise à jour de Fortnite a sans doute changé le format des replays : le programme devra être mis à jour."
+      : "Ces replays n'ont pas pu être lus : leurs coffres ne sont pas comptés. Ça arrive parfois avec un replay abîmé. Si ça se répète à chaque partie, une mise à jour de Fortnite a sans doute changé le format des replays.";
+  }
+}
+
+function remplirFiltres() {
+  const modes = [...new Set(parties.map(p => p.mode))].sort((a, b) => nomMode(a).localeCompare(nomMode(b), "fr"));
+  const sel = $("mode");
+  const tous = document.createElement("option");
+  tous.value = "tous"; tous.textContent = "Tous";
+  sel.appendChild(tous);
+  for (const m of modes) {
+    const o = document.createElement("option");
+    o.value = m; o.textContent = nomMode(m);
+    sel.appendChild(o);
+  }
+  const m = lire("mode", "tous");
+  sel.value = modes.includes(m) ? m : "tous";
+  $("periode").value = lire("periode", "tout");
+  for (const id of ["periode", "mode"]) {
+    $(id).addEventListener("change", () => { ecrire(id, $(id).value); rendre(); });
+  }
+}
+
+// Les chiffres ne prennent que les parties comptées (Battle Royale de la saison) ; le tableau des parties montre tout.
+function filtrees(toutes) {
+  const per = $("periode").value, mode = $("mode").value, maintenant = new Date();
+  return parties.filter(p => {
+    if (!toutes && !p.compte) return false;
+    if (mode !== "tous" && p.mode !== mode) return false;
+    if (per === "jour") return p.date.toDateString() === maintenant.toDateString();
+    if (per !== "tout") return maintenant - p.date <= Number(per) * 86400000;
+    return true;
+  });
+}
+
+function rendreTuiles(l) {
+  const somme = l.reduce((s, p) => s + p.total, 0);
+  const moy = l.length ? somme / l.length : 0;
+  const record = l.reduce((r, p) => (!r || p.total > r.total ? p : r), null);
+  $("t-moyenne").textContent = l.length ? nf1.format(moy) : "–";
+  $("t-moyenne-d").textContent = pluriel(l.length, "partie", "parties");
+  $("t-somme").textContent = nf.format(somme);
+  $("t-somme-d").textContent = l.length ? "Du " + fJour.format(l[0].date) + " au " + fJour.format(l[l.length - 1].date) : "Aucune partie";
+  $("t-record").textContent = record ? nf.format(record.total) : "–";
+  $("t-record-d").textContent = record ? fDate.format(record.date) : "";
+  const aPied = l.reduce((s, p) => s + p.aPied, 0), voiture = l.reduce((s, p) => s + p.voiture, 0);
+  $("t-casses").textContent = nf.format(aPied + voiture);
+  const tombes = l.reduce((s, p) => s + (p.tombes || 0), 0);
+  $("t-casses-d").textContent = nf.format(aPied) + " à pied · " + nf.format(voiture) + " en voiture" + (tombes ? " · dont " + nf.format(tombes) + " tombés" : "");
+  if (DONNEES.escouade) {
+    $("tuile-escouade").hidden = false;
+    const equipe = l.reduce((s, p) => s + p.total + (p.equipe || 0), 0);
+    $("t-escouade").textContent = nf.format(equipe);
+    $("t-escouade-d").textContent = "toi " + nf.format(l.reduce((s, p) => s + p.total, 0)) + " · tes coéquipiers " + nf.format(equipe - l.reduce((s, p) => s + p.total, 0));
+  }
+  return moy;
+}
+
+const nfPc = [0, 1, 2, 3].map(d => new Intl.NumberFormat("fr-FR", { minimumFractionDigits: d, maximumFractionDigits: d }));
+function pourcentage(v) {
+  const p = v * 100;
+  return nfPc[p >= 10 ? 0 : p >= 1 ? 1 : p >= 0.1 ? 2 : 3].format(p) + " %";
+}
+const fJourLong = new Intl.DateTimeFormat("fr-FR", { weekday: "long", day: "numeric", month: "long" });
+const fHeure = new Intl.DateTimeFormat("fr-FR", { hour: "2-digit", minute: "2-digit" });
+const nfFois = new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 1 });
+
+function rendreChances() {
+  const c = DONNEES.chances;
+  const coffres = DONNEES.parties.filter(p => p.compte).reduce((s, p) => s + p.total, 0) + DONNEES.coffresAvant;
+  $("chances-sous-titre").textContent = "Avec tes " + nf.format(coffres) + " coffres : la chance d'avoir obtenu chaque trésor au moins une fois.";
+  tableau($("chances"), [["Trésor"], ["Par coffre", 1], ["Ta chance", 1, 1], ["Coffres pour 1 chance sur 2", 1]],
+    c.liste.map(x => [x.nom + (x.bonus > 1 ? " (×" + nfFois.format(x.bonus) + " en ce moment)" : ""), "1 sur " + nf.format(x.unSur), pourcentage(x.chance), nf.format(x.pour50)]));
+  if (c.heure) {
+    const bonus = c.heure.bonus.map(b => b.nom.toLowerCase() + " ×" + nfFois.format(b.fois)).join(", ");
+    const debut = new Date(c.heure.debut), fin = new Date(c.heure.fin);
+    $("heure-tresor").textContent = c.heure.enCours
+      ? "Heure au trésor en cours jusqu'à " + fHeure.format(fin) + " : " + bonus + "."
+      : "Prochaine heure au trésor : " + fJourLong.format(debut) + " de " + fHeure.format(debut) + " à " + fHeure.format(fin) + " (" + bonus + ")" + (c.heure.confirmee ? "." : ", horaire habituel pas encore confirmé.");
+  } else {
+    $("heure-tresor").textContent = "Aucune heure au trésor prévue.";
+  }
+
+  $("semaine").textContent = c.semaine
+    ? "Semaine " + c.semaine.numero + " de la chasse : " + c.semaine.titre + (c.semaine.lots.length ? " · à gagner : " + c.semaine.lots.map(l => l.nom).join(", ") : "") + "."
+    : "La chasse au trésor de la saison est terminée.";
+  const liste = document.createElement("ul");
+  liste.className = "liste-lots";
+  for (const lot of DONNEES.collection) {
+    const li = document.createElement("li");
+    const nom = document.createElement("b"); nom.textContent = lot.nom;
+    const detail = document.createElement("span"); detail.textContent = lot.type + " · " + fJour.format(new Date(lot.date));
+    li.append(nom, detail);
+    liste.appendChild(li);
+  }
+  const boite = $("collection");
+  boite.replaceChildren();
+  if (DONNEES.collection.length) boite.appendChild(liste);
+  const recus = document.createElement("p");
+  recus.className = "note-carte";
+  recus.textContent = (DONNEES.collection.length ? "" : "Aucun lot lu en entier pour l'instant. ") +
+    "Ton escouade a reçu un trésor dans " + pluriel(DONNEES.partiesTresor, "partie", "parties") +
+    " : le replay ne dit pas toujours lequel, seuls ceux remis par un coffre doré apparaissent ci-dessus.";
+  boite.appendChild(recus);
+  $("autres").textContent = DONNEES.autres.length
+    ? "Vu chez les autres joueurs de tes parties : " + DONNEES.autres.map(a => a.nom + (a.nombre > 1 ? " ×" + a.nombre : "")).join(", ") + "."
+    : "";
+}
+
+const SVG = "http://www.w3.org/2000/svg";
+function el(nom, attrs, parent) {
+  const e = document.createElementNS(SVG, nom);
+  for (const k in attrs) e.setAttribute(k, attrs[k]);
+  if (parent) parent.appendChild(e);
+  return e;
+}
+
+function pasGraduation(max) {
+  for (const p of [1, 2, 5, 10, 20, 25, 50, 100]) if (max / p <= 5) return p;
+  return 200;
+}
+
+function rendreGraphique(l, moy) {
+  const boite = $("graphique"), bulle = $("infobulle");
+  boite.querySelector("svg")?.remove();
+  boite.querySelector(".vide")?.remove();
+  bulle.style.display = "none";
+  if (!l.length) {
+    const v = document.createElement("div");
+    v.className = "vide"; v.textContent = "Aucune partie sur cette sélection.";
+    boite.appendChild(v);
+    $("graph-sous-titre").textContent = "";
+    return;
+  }
+  const L = Math.max(boite.clientWidth, 280), H = 240, g = 28, d = 4, h = 18, b = 24;
+  const maxBarres = Math.floor((L - g - d) / 4);
+  const vue = l.slice(-maxBarres);
+  $("graph-sous-titre").textContent =
+    (vue.length < l.length ? "Les " + nf.format(vue.length) + " dernières parties. " : "Chaque barre est une partie. ") +
+    "La ligne marque ta moyenne (" + nf1.format(moy) + ").";
+
+  const svg = el("svg", { viewBox: `0 0 ${L} ${H}`, role: "group", "aria-label": "Coffres par partie" });
+  boite.insertBefore(svg, bulle);
+  const max = Math.max(5, ...vue.map(p => p.total));
+  const pas = pasGraduation(max);
+  const haut = Math.ceil(max / pas) * pas;
+  const y = v => h + (H - h - b) * (1 - v / haut);
+  for (let v = 0; v <= haut; v += pas) {
+    el("line", { x1: g, x2: L - d, y1: y(v), y2: y(v), stroke: v === 0 ? "var(--axis)" : "var(--grid)", "stroke-width": 1 }, svg);
+    const t = el("text", { x: g - 6, y: y(v) + 4, "text-anchor": "end" }, svg);
+    t.textContent = nf.format(v);
+  }
+  const slot = (L - g - d) / vue.length;
+  const larg = Math.min(24, Math.max(2, slot - 2));
+  let dernierJour = "", dernierX = -999;
+  const record = vue.reduce((r, p) => (p.total > r.total ? p : r), vue[0]);
+
+  vue.forEach((p, i) => {
+    const cx = g + slot * i + slot / 2, x = cx - larg / 2;
+    const zone = el("rect", {
+      class: "zone", x: g + slot * i, y: h, width: slot, height: H - h - b, tabindex: 0, role: "img",
+      "aria-label": fDate.format(p.date) + " : " + pluriel(p.total, "coffre", "coffres"),
+    }, svg);
+    const yb = y(p.total), base = y(0), r = Math.min(4, larg / 2);
+    // Toujours un element apres la zone, pour que le survol puisse le colorer.
+    el("path", {
+      class: "barre", "pointer-events": "none",
+      d: p.total > 0 ? `M${x} ${base}V${yb + r}Q${x} ${yb} ${x + r} ${yb}H${x + larg - r}Q${x + larg} ${yb} ${x + larg} ${yb + r}V${base}Z` : "",
+    }, svg);
+    const montrer = () => {
+      bulle.replaceChildren();
+      const fort = document.createElement("b");
+      fort.textContent = pluriel(p.total, "coffre", "coffres");
+      const a = document.createElement("span");
+      a.textContent = pluriel(p.ouverts, "ouvert", "ouverts") + " · " + nf.format(p.aPied) + " à pied · " + nf.format(p.voiture) + " en voiture";
+      const c = document.createElement("span");
+      c.textContent = fDate.format(p.date) + " · " + nomMode(p.mode);
+      bulle.append(fort, a, c);
+      bulle.style.display = "block";
+      const bw = bulle.offsetWidth, echelle = boite.clientWidth / L;
+      let gauche = cx * echelle - bw / 2;
+      gauche = Math.max(0, Math.min(gauche, boite.clientWidth - bw));
+      const dessus = yb * echelle - bulle.offsetHeight - 8;
+      bulle.style.transform = `translate(${gauche}px, ${Math.max(0, dessus)}px)`;
+    };
+    const cacher = () => { bulle.style.display = "none"; };
+    zone.addEventListener("pointerenter", montrer);
+    zone.addEventListener("pointerleave", cacher);
+    zone.addEventListener("focus", montrer);
+    zone.addEventListener("blur", cacher);
+
+    const jour = p.date.toDateString();
+    if (jour !== dernierJour && cx - dernierX >= 46) {
+      const t = el("text", { x: cx, y: H - 6, "text-anchor": i === 0 && slot < 40 ? "start" : "middle" }, svg);
+      t.textContent = fJour.format(p.date);
+      dernierX = cx;
+    }
+    dernierJour = jour;
+    if (p === record && p.total > 0) {
+      const t = el("text", { class: "valeur-record", x: cx, y: yb - 5, "text-anchor": "middle" }, svg);
+      t.textContent = nf.format(p.total);
+    }
+  });
+  el("line", { x1: g, x2: L - d, y1: y(moy), y2: y(moy), stroke: "var(--ink-2)", "stroke-width": 1.5, "pointer-events": "none" }, svg);
+}
+
+function tableau(table, entetes, lignes) {
+  table.replaceChildren();
+  const thead = table.createTHead().insertRow();
+  for (const [texte, nb] of entetes) {
+    const th = document.createElement("th");
+    th.textContent = texte;
+    if (nb) th.className = "nb";
+    thead.appendChild(th);
+  }
+  const corps = table.createTBody();
+  for (const ligne of lignes) {
+    const tr = corps.insertRow();
+    ligne.forEach((v, i) => {
+      const td = tr.insertCell();
+      td.textContent = v;
+      if (entetes[i][1]) td.className = "nb";
+      if (entetes[i][2]) td.classList.add("fort");
+    });
+  }
+}
+
+function rendreTableaux(l) {
+  const modes = new Map();
+  for (const p of l) {
+    const m = modes.get(p.mode) || { n: 0, s: 0 };
+    m.n++; m.s += p.total;
+    modes.set(p.mode, m);
+  }
+  tableau($("par-mode"), [["Mode"], ["Parties", 1], ["Coffres", 1], ["Moyenne", 1, 1]],
+    [...modes].sort((a, b) => b[1].n - a[1].n).map(([k, m]) => [nomMode(k), nf.format(m.n), nf.format(m.s), nf1.format(m.s / m.n)]));
+
+  const types = new Map();
+  let aPied = 0, voiture = 0, tot = 0;
+  for (const p of l) {
+    for (const [k, v] of Object.entries(p.types)) { types.set(k, (types.get(k) || 0) + v); tot += v; }
+    aPied += p.aPied; voiture += p.voiture; tot += p.casses;
+  }
+  const lignesTypes = [...types].sort((a, b) => b[1] - a[1]);
+  if (aPied) lignesTypes.push(["Cassés à pied", aPied]);
+  if (voiture) lignesTypes.push(["Cassés en voiture", voiture]);
+  tableau($("par-type"), [["Type"], ["Coffres", 1, 1], ["Part", 1]],
+    lignesTypes.map(([k, v]) => [k, nf.format(v), Math.round(v / tot * 100) + " %"]));
+
+  // Toutes les parties, y compris celles qui ne comptent pas (grisées, avec la raison au survol).
+  const inverse = [...filtrees(true)].reverse();
+  const visibles = toutAfficher ? inverse : inverse.slice(0, 15);
+  tableau($("parties"), [["Fin"], ["Mode"], ["Durée", 1], ["Classement", 1], ["Ouverts", 1], ["À pied", 1], ["Voiture", 1], ["Trésor"], ["Total", 1, 1]],
+    visibles.map(p => [fDate.format(p.date), nomMode(p.mode), nf.format(Math.round(p.minutes)) + " min",
+      p.classement ? "Top " + p.classement : "–", nf.format(p.ouverts), nf.format(p.aPied), nf.format(p.voiture),
+      p.lots.length ? p.lots.join(", ") : p.tresor ? "reçu" : "", p.compte ? nf.format(p.total) : "non compté"]));
+  [...$("parties").tBodies[0].rows].forEach((tr, i) => {
+    if (visibles[i].compte) return;
+    tr.classList.add("non-compte");
+    tr.title = "Pas comptée : " + visibles[i].raison;
+  });
+  const bouton = $("plus");
+  bouton.style.display = inverse.length > 15 ? "" : "none";
+  bouton.textContent = toutAfficher ? "Afficher moins" : "Tout afficher (" + nf.format(inverse.length) + ")";
+}
+
+function rendre() {
+  const l = filtrees();
+  const moy = rendreTuiles(l);
+  rendreGraphique(l, moy);
+  rendreTableaux(l);
+}
+
+$("plus").addEventListener("click", () => {
+  toutAfficher = !toutAfficher;
+  ecrire("tout", toutAfficher ? "1" : "0");
+  rendreTableaux(filtrees());
+});
+
+remplirEntete();
+remplirFiltres();
+rendre();
+rendreChances();
+
+let largeur = $("graphique").clientWidth;
+new ResizeObserver(() => {
+  const w = $("graphique").clientWidth;
+  if (w !== largeur) { largeur = w; rendreGraphique(filtrees(), rendreTuiles(filtrees())); }
+}).observe($("graphique"));
+
+// La page se recharge seule pour afficher les nouvelles parties, sans perdre la position.
+try { const y = Number(sessionStorage.getItem("defilement")); if (y) window.scrollTo(0, y); } catch { /* facultatif */ }
+setTimeout(() => { ecrire("defilement", String(window.scrollY)); location.reload(); }, 60000);
+</script>
+</body>
+</html>

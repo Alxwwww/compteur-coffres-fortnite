@@ -1,0 +1,77 @@
+COMPTEUR DE COFFRES FORTNITE (version 2.1)
+==========================================
+
+Ce petit programme compte les coffres que tu ouvres et que tu casses dans
+Fortnite, partie après partie, et les affiche dans une petite fenêtre à l'écran.
+Il calcule aussi tes chances d'avoir obtenu les trésors de la chasse au trésor
+(accès à la boutique pirate, tenue en or...).
+
+
+1. ACTIVE LES REPLAYS DANS FORTNITE
+   Dans les réglages de Fortnite (onglet Jeu, section Replays), active
+   l'enregistrement des replays de Battle Royale. Sans ça, rien ne peut être compté.
+
+2. LANCE CompteurCoffres.exe
+   Windows peut afficher « Windows a protégé votre ordinateur » : le programme
+   n'est pas signé. Clique sur « Informations complémentaires », puis
+   « Exécuter quand même ».
+   Une petite fenêtre apparaît à gauche de l'écran, et un coffre près de l'horloge.
+   Au premier lancement, il lit tes anciens replays : ça peut prendre quelques
+   minutes (voyant orange).
+
+3. POUR QUE ÇA MARCHE TOUT SEUL
+   Clic droit sur le coffre près de l'horloge, puis coche
+   « Lancer au démarrage de Windows ».
+
+
+LA PETITE FENÊTRE
+- Total : tous tes coffres ouverts et cassés. À côté : ta dernière partie.
+- Session : les parties jouées à la suite. Cassés : à pied et en voiture.
+- Boutique : ta chance cumulée d'avoir obtenu l'accès à la boutique pirate.
+- Escouade (si tu l'actives) : tes coffres + ceux de tes coéquipiers.
+- Voyant vert : tout va bien. Orange : lecture d'une partie en cours.
+  Rouge : problème (replays désactivés, ou mise à jour de Fortnite).
+- Elle se déplace à la souris. Le cadenas bloque sa position.
+  Clic droit dessus : ouvrir le tableau détaillé, ou la masquer.
+- Pour la voir par-dessus le jeu, mets Fortnite en « Plein écran fenêtré »
+  ou en « Fenêtré » (pas en « Plein écran »).
+
+LE TABLEAU DÉTAILLÉ
+Tant que le programme tourne, ouvre http://localhost:8766 dans ton navigateur
+(à mettre en favori). Tu y trouves ton total, ta moyenne, tes records, tes
+chances pour chaque trésor, la prochaine heure au trésor (chances boostées),
+ta collection et le détail de chaque partie. Il se met à jour tout seul.
+Cette adresse ne fonctionne que sur ton PC : rien n'est publié sur Internet.
+
+LE MENU DU COFFRE (clic droit sur le coffre près de l'horloge)
+- Afficher le total d'escouade : ajoute les coffres de tes coéquipiers.
+- Ajouter mes coffres d'avant le compteur : si tu as joué avant de l'installer.
+  Le programme peut les estimer à partir de ton nombre de parties
+  (onglet Carrière de Fortnite).
+- Indiquer où en est ma quête : aligne le compteur sur ta quête « Ouvrir des
+  coffres ». Seuls les coffres ouverts font avancer la quête.
+- Copier l'adresse pour OBS : pour afficher la petite fenêtre dans un stream
+  (source « Navigateur » dans OBS, fond transparent).
+- Désinstaller : enlève le programme, en gardant ou non ton historique.
+
+
+CE QUI EST COMPTÉ
+- Seul le Battle Royale de la saison compte, avec ou sans construction.
+  Le classé, OG, Reload, les modes temporaires et le Créatif sont affichés dans
+  le tableau mais pas comptés.
+- Les coffres ouverts, les coffres rechargés en cours de partie et rouverts,
+  les coffres cassés (pioche, voiture) et les coffres qui tombent quand tu casses
+  leur support.
+- Les trésors : ceux remis par un coffre doré sont listés avec leur nom ;
+  pour les autres, le replay dit seulement qu'un trésor a été reçu.
+
+BON À SAVOIR
+- Le programme lit seulement les replays de Fortnite sur ton PC. Il ne touche
+  pas au jeu, ne se connecte à aucun compte et n'envoie rien sur Internet.
+- Les coffres sont comptés environ une minute après la fin de chaque partie.
+- C'est une estimation : environ 1 % d'écart avec la quête lors des tests.
+- Seules les parties jouées sur ce PC sont comptées.
+- Tes données sont dans %LOCALAPPDATA%\CompteurCoffres
+  (menu « Ouvrir le dossier des données »).
+- Méthode de lecture, chances et calendrier des heures au trésor repris du
+  projet libre ChestCounter (LED-N, licence MIT).
