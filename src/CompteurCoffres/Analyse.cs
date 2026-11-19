@@ -157,9 +157,18 @@ internal sealed class LecteurCoffres : ReplayReader
     // Une remise de tresor (GA_TreasureHandler_*) a eu lieu pour toi ou ton escouade : le type exact n'est pas lisible ici.
     public bool TresorRecu { get; private set; }
 
+    /// <summary>Diagnostic : noms d'objets et de groupes du replay qui correspondent a ce filtre, gardes dans <see cref="CheminsVus"/>.</summary>
+    public Regex? FiltreChemins { get; set; }
+    public List<string> CheminsVus { get; } = new();
+
     protected override void Cleanup()
     {
         TresorRecu = _netGuidCache.NetGuidToPathName.Values.Any(c => c != null && c.Contains("GA_TreasureHandler", StringComparison.Ordinal));
+        if (FiltreChemins is { } filtre)
+        {
+            CheminsVus.AddRange(_netGuidCache.NetGuidToPathName.Values.Where(c => c != null && filtre.IsMatch(c)).Select(c => "objet  " + c).Distinct());
+            CheminsVus.AddRange(_netGuidCache.NetFieldExportGroupMap.Keys.Where(c => filtre.IsMatch(c)).Select(c => "groupe " + c).Distinct());
+        }
         base.Cleanup();
     }
 
@@ -439,6 +448,18 @@ internal static class Analyse
     /// Toutes les 3 secondes, le resultat partiel est ecrit aussi : si la bibliotheque boucle sur un replay,
     /// le compteur arrete ce processus et garde les coffres deja vus. Code 0 : lu ; 2 : partie pas finie ; 3 : erreur.
     /// </summary>
+    /// <summary>Diagnostic : ecrit les noms du replay qui correspondent au motif, et les lots des coffres dores.</summary>
+    public static int Chemins(string chemin, string motif, string sortie)
+    {
+        var lecteur = new LecteurCoffres { FiltreChemins = new Regex(motif, RegexOptions.IgnoreCase) };
+        using (var flux = new FileStream(chemin, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete))
+            lecteur.ReadReplay(flux);
+        var lignes = lecteur.CheminsVus.OrderBy(c => c).ToList();
+        lignes.AddRange(lecteur.Lots.Select(l => $"lot    {l.Temps:F0}s {l.Identifiant} pion={l.Pion}"));
+        File.WriteAllLines(sortie, lignes);
+        return 0;
+    }
+
     public static int LireVers(string chemin, string sortie)
     {
         var fichier = new FileInfo(chemin);

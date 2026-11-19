@@ -7,6 +7,9 @@ internal static class Tableau
 {
     public static string Chemin(Stockage stockage) => Path.Combine(stockage.Dossier, "tableau.html");
 
+    /// <summary>Change a chaque ecriture : la page ouverte compare avec /etat.json et se recharge quand il y a du nouveau.</summary>
+    public static string Version { get; private set; } = "";
+
     /// <summary>Regenere la page du tableau de bord a partir des donnees enregistrees.</summary>
     public static void Ecrire(Stockage stockage)
     {
@@ -14,6 +17,10 @@ internal static class Tableau
         var comptees = stockage.Comptees();
         var calage = stockage.Donnees.Calage;
         var maintenant = DateTime.UtcNow;
+        var version = Guid.NewGuid().ToString("N")[..12];
+        var coteBoutique = stockage.CoteBoutique();
+        var coteBoutiqueEpic = Tresors.Cotes.First(c => c.Type == Tresors.Boutique);
+        Cote CoteDe(Cote c) => c.Type == Tresors.Boutique ? coteBoutique : c;
         // Seules les parties recentes pesent sur le total : les anciennes sont couvertes par le calage.
         var recentes = calage != null ? comptees.Where(p => p.Fin > calage.Date) : comptees.TakeLast(20);
 
@@ -22,16 +29,32 @@ internal static class Tableau
         var heure = Tresors.HeureEnCoursOuProchaine(maintenant);
         var semaine = Tresors.SemaineDe(maintenant);
         var coffresDates = stockage.CoffresDates().ToList();
+        var coffresDatesEquipe = stockage.CoffresDates(equipe: true).ToList();
+        var avant = stockage.Donnees.CoffresAvant;
+        var total = stockage.Total();
 
         var donnees = new
         {
+            version,
             genereLe = DateTimeOffset.Now,
-            total = stockage.Total(),
+            total,
+            // Avec les coffres de tes coequipiers, ajoutes a ton total.
+            totalEquipe = total + comptees.Sum(p => p.CoffresEquipe),
             quete = stockage.Quete(),
             objectif = Stockage.ObjectifQuete,
-            coffresAvant = stockage.Donnees.CoffresAvant,
+            coffresAvant = avant,
             calage = calage == null ? null : new { date = calage.Date, valeur = calage.Valeur },
-            escouade = stockage.Donnees.Fenetre.Escouade ? new { total = comptees.Sum(p => p.Total + p.CoffresEquipe) + stockage.Donnees.CoffresAvant } : null,
+            escouadeParDefaut = stockage.Donnees.Fenetre.Escouade,
+            boutique = new
+            {
+                unSur = coteBoutique.UnSur,
+                unSurEpic = coteBoutiqueEpic.UnSur,
+                chance = Tresors.Chance(coteBoutique, coffresDates, avant),
+                chanceEquipe = Tresors.Chance(coteBoutique, coffresDatesEquipe, avant),
+                obtenue = stockage.Donnees.BoutiqueObtenue,
+            },
+            replaysAjoutes = Directory.Exists(Path.Combine(stockage.Dossier, "Replays ajoutés"))
+                ? Directory.GetFiles(Path.Combine(stockage.Dossier, "Replays ajoutés"), "*.replay").Length : 0,
             parties = parties.Select(p => new
             {
                 fin = p.Fin,
@@ -46,6 +69,7 @@ internal static class Tableau
                 tombes = p.CassesTombes,
                 total = p.Total,
                 equipe = p.CoffresEquipe,
+                equipiers = p.Equipiers,
                 types = p.ParType,
                 compte = p.Comptee,
                 raison = ModesJeu.Raison(p),
@@ -54,13 +78,14 @@ internal static class Tableau
             }),
             chances = new
             {
-                liste = Tresors.Cotes.Select(c => new
+                liste = Tresors.Cotes.Select(CoteDe).Select(c => new
                 {
                     type = c.Type,
                     nom = Tresors.NomType(c.Type),
                     unSur = c.UnSur,
                     hebdo = c.Hebdo,
-                    chance = Tresors.Chance(c, coffresDates, stockage.Donnees.CoffresAvant),
+                    chance = Tresors.Chance(c, coffresDates, avant),
+                    chanceEquipe = Tresors.Chance(c, coffresDatesEquipe, avant),
                     pour50 = Tresors.CoffresPour(c.UnSur, 0.5),
                     bonus = Tresors.Bonus(c.Type, maintenant),
                 }),
@@ -96,6 +121,7 @@ internal static class Tableau
         var temporaire = chemin + ".tmp";
         File.WriteAllText(temporaire, page);
         File.Move(temporaire, chemin, overwrite: true);
+        Version = version;
     }
 
     private static bool EstSuspecte(Partie partie) =>

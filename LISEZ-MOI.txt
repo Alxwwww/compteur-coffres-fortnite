@@ -1,4 +1,4 @@
-COMPTEUR DE COFFRES FORTNITE (version 2.1)
+COMPTEUR DE COFFRES FORTNITE (version 2.2)
 ==========================================
 
 Ce petit programme compte les coffres que tu ouvres et que tu casses dans
@@ -38,13 +38,26 @@ LA PETITE FENÊTRE
 
 LE TABLEAU DÉTAILLÉ
 Tant que le programme tourne, ouvre http://localhost:8766 dans ton navigateur
-(à mettre en favori). Tu y trouves ton total, ta moyenne, tes records, tes
-chances pour chaque trésor, la prochaine heure au trésor (chances boostées),
-ta collection et le détail de chaque partie. Il se met à jour tout seul.
+(à mettre en favori). Tu y trouves ton total, ta chance d'avoir eu l'accès à la
+boutique, ta moyenne, tes records, un graphique de tes parties, tes chances pour
+chaque trésor, la prochaine heure au trésor (chances boostées), ta collection et
+le détail de chaque partie. Il se met à jour tout seul après chaque partie.
+- Rien que toi / Avec tes coéquipiers : ajoute ou non les coffres de ton
+  escouade au total, aux chances et au graphique.
+- Dépose des replays (ou un dossier) dans le cadre en pointillés pour compter
+  des parties d'un autre PC ou d'une sauvegarde.
+- Exporter : enregistre toutes tes parties dans un fichier. Importer : les
+  recharge, par exemple sur un autre PC. Les fichiers exportés depuis le site
+  Fortnite Chest Counter sont acceptés aussi.
+- La roue dentée : coffres hors replays, valeur de ta quête, chance de la
+  boutique, et « Relire tous les replays ».
 Cette adresse ne fonctionne que sur ton PC : rien n'est publié sur Internet.
 
 LE MENU DU COFFRE (clic droit sur le coffre près de l'horloge)
 - Afficher le total d'escouade : ajoute les coffres de tes coéquipiers.
+- J'ai eu l'accès à la boutique : le replay ne dit pas toujours quel trésor
+  t'a été remis. Coche-le quand tu l'as eu : le compteur affiche « obtenue ✓ »
+  à la place de ta chance.
 - Ajouter mes coffres d'avant le compteur : si tu as joué avant de l'installer.
   Le programme peut les estimer à partir de ton nombre de parties
   (onglet Carrière de Fortnite).
@@ -63,15 +76,18 @@ CE QUI EST COMPTÉ
   les coffres cassés (pioche, voiture) et les coffres qui tombent quand tu casses
   leur support.
 - Les trésors : ceux remis par un coffre doré sont listés avec leur nom ;
-  pour les autres, le replay dit seulement qu'un trésor a été reçu.
+  pour les autres, le replay dit seulement qu'un trésor a été reçu (« trésor
+  sans nom »). Une bulle près de l'horloge te prévient après la partie.
 
 BON À SAVOIR
 - Le programme lit seulement les replays de Fortnite sur ton PC. Il ne touche
   pas au jeu, ne se connecte à aucun compte et n'envoie rien sur Internet.
 - Les coffres sont comptés environ une minute après la fin de chaque partie.
 - C'est une estimation : environ 1 % d'écart avec la quête lors des tests.
-- Seules les parties jouées sur ce PC sont comptées.
+- Seules les parties jouées sur ce PC sont comptées, plus les replays que tu
+  déposes dans le tableau.
 - Tes données sont dans %LOCALAPPDATA%\CompteurCoffres
   (menu « Ouvrir le dossier des données »).
 - Méthode de lecture, chances et calendrier des heures au trésor repris du
-  projet libre ChestCounter (LED-N, licence MIT).
+  projet libre ChestCounter (LED-N, licence MIT). Présentation du tableau
+  inspirée du site Fortnite Chest Counter (Jose-AE).

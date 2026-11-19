@@ -255,7 +255,8 @@ internal sealed class FenetreCompteur : Form
         }
         if (resume?.TotalEquipe is { } equipe)
             Ligne("Escouade", Nombre(equipe), resume.DerniereEquipe is { } de ? $"  dernière partie {Nombre(de)}" : "");
-        Ligne("Boutique", resume == null ? "–" : Pourcentage(resume.ChanceBoutique), "  chance cumulée");
+        if (resume?.BoutiqueObtenue == true) Ligne("Boutique", "obtenue ✓", "  accès à la boutique pirate");
+        else Ligne("Boutique", resume == null ? "–" : Pourcentage(resume.ChanceBoutique), "  chance cumulée");
         y += S(4, s);
 
         var couleur = Couleurs[etat?.Voyant ?? Voyant.Gris];

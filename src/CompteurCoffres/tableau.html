@@ -3,381 +3,606 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Mes coffres Fortnite</title>
+<meta name="theme-color" content="#222327">
+<title>Compteur de coffres</title>
 <style>
   :root {
-    color-scheme: light;
-    --plane: #f9f9f7;
-    --surface: #fcfcfb;
-    --ink: #0b0b0b;
-    --ink-2: #52514e;
-    --muted: #6f6e69;
-    --grid: #e1e0d9;
-    --axis: #c3c2b7;
-    --ring: rgba(11, 11, 11, 0.10);
-    --series: #2a78d6;
-    --series-hover: #1c5cab;
-    --track: #cde2fb;
-    --critical: #d03b3b;
-    --wash: rgba(11, 11, 11, 0.05);
-  }
-  @media (prefers-color-scheme: dark) {
-    :root {
-      color-scheme: dark;
-      --plane: #0d0d0d;
-      --surface: #1a1a19;
-      --ink: #f0efec;
-      --ink-2: #c3c2b7;
-      --muted: #989690;
-      --grid: #2c2c2a;
-      --axis: #383835;
-      --ring: rgba(255, 255, 255, 0.10);
-      --series: #3987e5;
-      --series-hover: #6da7ec;
-      --track: #184f95;
-      --critical: #d03b3b;
-      --wash: rgba(255, 255, 255, 0.07);
-    }
+    color-scheme: dark;
+    --fond: #2b2d31;
+    --barre: #202124;
+    --carte: #232428;
+    --carte-2: #1c1d20;
+    --bord: #393b41;
+    --bord-2: #4a4d55;
+    --texte: #f2f2f3;
+    --texte-2: #b7b8be;
+    --muet: #8d8e95;
+    --jaune: #fcc937;
+    --jaune-fonce: #e0a91f;
+    --bleu: #4d8ef0;
+    --rouge: #e5534b;
+    --vert: #3fb950;
+    --orange: #f0a030;
+    --titre: "Segoe UI Black", "Arial Black", "Segoe UI", system-ui, sans-serif;
   }
   * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
   html { -webkit-text-size-adjust: 100%; }
   body {
     margin: 0;
-    background: var(--plane);
-    color: var(--ink);
-    font: 15px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
+    color: var(--texte);
+    font: 14px/1.45 "Segoe UI", system-ui, -apple-system, sans-serif;
+    background-color: var(--fond);
+    background-image:
+      radial-gradient(ellipse 60% 45% at 18% 0%, rgba(252, 201, 55, 0.13), transparent 70%),
+      linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+    background-size: auto, 44px 44px, 44px 44px;
+    min-height: 100vh;
   }
-  main { max-width: 980px; margin: 0 auto; padding: 24px 16px 40px; display: grid; gap: 16px; }
-  header h1 { font-size: 20px; font-weight: 600; margin: 0; }
-  header p { margin: 2px 0 0; color: var(--ink-2); font-size: 13px; }
-  .carte { background: var(--surface); border-radius: 12px; box-shadow: 0 0 0 1px var(--ring); padding: 18px; min-width: 0; }
-  .carte h2 { font-size: 15px; font-weight: 600; margin: 0; }
-  .sous-titre { margin: 2px 0 12px; color: var(--ink-2); font-size: 13px; }
-
-  .alerte { display: none; gap: 10px; align-items: flex-start; border-left: 4px solid var(--critical); }
-  .alerte.visible { display: flex; }
-  .alerte .icone { color: var(--critical); font-size: 18px; line-height: 1.2; }
-  .alerte strong { display: block; }
-  .alerte p { margin: 2px 0 0; color: var(--ink-2); font-size: 13px; }
-
-  .hero .libelle { color: var(--ink-2); font-size: 13px; }
-  .hero .valeur { font-size: 64px; font-weight: 650; line-height: 1.05; letter-spacing: -0.01em; }
-  .hero .note { color: var(--ink-2); font-size: 13px; margin: 6px 0 0; }
-  .jauge { margin-top: 14px; }
-  .jauge .piste { height: 8px; border-radius: 4px; background: var(--track); overflow: hidden; }
-  .jauge .rempli { height: 100%; border-radius: 4px; background: var(--series); }
-  .jauge .legende { margin: 6px 0 0; color: var(--ink-2); font-size: 13px; }
-
-  .filtres { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; }
-  .filtres label { color: var(--ink-2); font-size: 13px; display: inline-flex; gap: 6px; align-items: center; }
-  select, button {
-    font: inherit; color: var(--ink); background: var(--surface);
-    border: 0; box-shadow: 0 0 0 1px var(--ring); border-radius: 8px; padding: 6px 10px;
-  }
+  button, input { font: inherit; color: inherit; }
   button { cursor: pointer; }
-  button:hover { background: var(--wash); }
-  :focus-visible { outline: 2px solid var(--series); outline-offset: 2px; }
+  :focus-visible { outline: 2px solid var(--jaune); outline-offset: 2px; }
+  a { color: inherit; }
+  svg.icone { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex: none; }
 
-  .tuiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 16px; }
-  .tuile .libelle { color: var(--ink-2); font-size: 13px; }
-  .tuile .valeur { font-size: 28px; font-weight: 600; line-height: 1.2; margin-top: 2px; }
-  .tuile .detail { color: var(--ink-2); font-size: 13px; margin-top: 2px; }
+  /* Barre du haut */
+  .barre-haut { background: var(--barre); border-bottom: 1px solid #17181a; }
+  .barre-haut .dedans { max-width: 1180px; margin: 0 auto; padding: 0 24px; height: 52px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  .marque { display: flex; align-items: center; gap: 10px; text-decoration: none; font-family: var(--titre); font-weight: 900; font-size: 17px; letter-spacing: 0.01em; text-transform: uppercase; white-space: nowrap; }
+  .marque svg { width: 28px; height: 28px; }
+  .liens-haut { display: flex; gap: 4px; }
+  .liens-haut a { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 8px; color: var(--texte-2); }
+  .liens-haut a:hover { background: rgba(255, 255, 255, 0.07); color: var(--texte); }
 
-  .graphique { position: relative; }
-  .graphique svg { display: block; width: 100%; height: auto; overflow: visible; }
-  .graphique text { font-size: 11px; fill: var(--muted); font-variant-numeric: tabular-nums; }
-  .graphique .valeur-record { font-size: 12px; font-weight: 600; fill: var(--ink); }
-  .barre { fill: var(--series); }
-  .zone { fill: transparent; cursor: default; outline: none; }
-  .zone:hover + .barre, .zone:focus + .barre { fill: var(--series-hover); }
-  .zone:focus-visible { stroke: var(--series); stroke-width: 2px; }
-  .infobulle {
-    position: absolute; top: 0; left: 0; pointer-events: none; display: none; z-index: 2;
-    background: var(--surface); box-shadow: 0 0 0 1px var(--ring), 0 6px 18px rgba(0, 0, 0, 0.16);
-    border-radius: 8px; padding: 8px 10px; font-size: 13px; width: max-content; max-width: 240px;
+  main { max-width: 1180px; margin: 0 auto; padding: 28px 24px 32px; display: grid; gap: 20px; }
+
+  /* Alerte (replays illisibles) */
+  .alerte { display: flex; gap: 12px; align-items: flex-start; background: rgba(229, 83, 75, 0.12); border: 1px solid rgba(229, 83, 75, 0.45); border-radius: 12px; padding: 14px 16px; }
+  .alerte[hidden] { display: none; }
+  .alerte strong { display: block; }
+  .alerte p { margin: 2px 0 0; color: var(--texte-2); }
+  .alerte .icone { color: var(--rouge); margin-top: 2px; }
+
+  /* Haut de page : le total et la zone de depot */
+  .hero { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 32px; align-items: stretch; }
+  .periode { margin: 4px 0 0; font-family: var(--titre); font-weight: 900; font-size: 15px; color: var(--muet); text-transform: uppercase; letter-spacing: 0.02em; }
+  .gros-nombre {
+    font-family: var(--titre); font-weight: 900; font-style: italic;
+    font-size: clamp(68px, 10.5vw, 138px); line-height: 0.95; letter-spacing: -0.02em;
+    color: var(--jaune); text-shadow: 3px 5px 0 rgba(0, 0, 0, 0.42);
+    margin: 6px 0 0; padding-right: 0.1em; font-variant-numeric: tabular-nums; overflow-wrap: anywhere;
   }
-  .infobulle b { display: block; font-size: 15px; font-weight: 650; }
-  .infobulle span { display: block; color: var(--ink-2); }
+  .gros-nombre.long { font-size: clamp(56px, 8.4vw, 112px); }
+  .mot-coffres { font-family: var(--titre); font-weight: 900; font-size: clamp(32px, 4vw, 46px); line-height: 1.05; text-transform: uppercase; text-shadow: 2px 3px 0 rgba(0, 0, 0, 0.35); margin-top: 6px; }
+  .chance { margin: 10px 0 0; font-family: var(--titre); font-weight: 900; font-size: 15.5px; text-transform: uppercase; color: var(--texte-2); letter-spacing: 0.01em; }
+  .aide-survol { position: relative; display: inline-block; color: var(--texte); border-bottom: 2px dotted var(--muet); cursor: help; outline-offset: 3px; }
+  .aide-survol .bulle {
+    display: none; position: absolute; left: 0; top: calc(100% + 10px); z-index: 5; width: min(340px, 80vw);
+    font: 13px/1.45 "Segoe UI", system-ui, sans-serif; text-transform: none; letter-spacing: 0; color: var(--texte);
+    background: #111214; border: 1px solid var(--bord); border-radius: 8px; padding: 10px 12px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+  }
+  .aide-survol:hover .bulle, .aide-survol:focus .bulle { display: block; }
+  #chance.obtenu { color: var(--jaune); }
+  .quete { margin: 8px 0 0; color: var(--texte-2); font-size: 13.5px; }
+  .quete b { color: var(--texte); }
+  .quete[hidden] { display: none; }
+  .commandes { display: flex; gap: 10px; align-items: center; margin-top: 22px; flex-wrap: wrap; }
+  .bascule { display: inline-flex; background: #1b1c1f; border: 1px solid var(--bord); border-radius: 10px; padding: 4px; gap: 2px; max-width: 100%; }
+  .bascule button {
+    display: inline-flex; align-items: center; gap: 8px; border: 0; background: transparent; color: var(--texte-2);
+    font-family: var(--titre); font-weight: 900; font-size: 13.5px; text-transform: uppercase; padding: 8px 12px; border-radius: 7px; white-space: nowrap;
+  }
+  .bascule button:hover { color: var(--texte); }
+  .bascule button[aria-pressed="true"] { background: #fff; color: #111; box-shadow: 0 0 0 2px var(--jaune); }
+  .pastille { font: 700 11px/1 "Segoe UI", system-ui, sans-serif; background: rgba(255, 255, 255, 0.1); color: var(--texte-2); border-radius: 5px; padding: 4px 6px; font-variant-numeric: tabular-nums; }
+  .bascule button[aria-pressed="true"] .pastille { background: #e7e7ea; color: #222; }
+  .bouton-icone { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 10px; border: 1px solid var(--bord); background: #1b1c1f; color: var(--texte-2); }
+  .bouton-icone:hover { color: var(--texte); border-color: var(--bord-2); }
 
-  .deux { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
-  .defile { overflow-x: auto; }
+  .depot {
+    border: 2px dashed #5a5d66; border-radius: 16px; background: rgba(20, 21, 24, 0.35);
+    display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 10px; padding: 22px 20px; min-height: 260px;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .depot.survol { border-color: var(--jaune); background: rgba(252, 201, 55, 0.07); }
+  .depot .nuage { width: 34px; height: 34px; color: var(--jaune); stroke-width: 1.8; }
+  .depot-titre { margin: 0; font-family: var(--titre); font-weight: 900; font-style: italic; font-size: 15px; text-transform: uppercase; color: var(--texte-2); }
+  .depot-boutons { display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; }
+  .depot-note { margin: 0; color: var(--texte-2); font-size: 12.5px; max-width: 420px; }
+  code { font-family: Consolas, "Cascadia Mono", ui-monospace, monospace; font-size: 12px; color: var(--texte); overflow-wrap: anywhere; }
+  .statut { display: inline-flex; align-items: center; gap: 8px; margin: 2px 0 0; font-size: 13px; color: var(--texte); background: rgba(0, 0, 0, 0.25); border-radius: 999px; padding: 5px 12px; }
+  .voyant { width: 9px; height: 9px; border-radius: 50%; background: var(--muet); flex: none; }
+  .voyant.vert { background: var(--vert); box-shadow: 0 0 8px rgba(63, 185, 80, 0.7); }
+  .voyant.orange { background: var(--orange); box-shadow: 0 0 8px rgba(240, 160, 48, 0.7); }
+  .voyant.rouge { background: var(--rouge); box-shadow: 0 0 8px rgba(229, 83, 75, 0.7); }
+
+  .bouton {
+    border: 0; border-radius: 7px; padding: 8px 13px; background: #3a3c42; color: var(--texte);
+    font-family: var(--titre); font-weight: 900; font-size: 12.5px; text-transform: uppercase; letter-spacing: 0.01em; white-space: nowrap;
+  }
+  .bouton:hover { background: #474a51; }
+  .bouton.principal { background: var(--jaune); color: #1a1405; }
+  .bouton.principal:hover { background: #ffd65c; }
+  .bouton:disabled { opacity: 0.5; cursor: default; }
+
+  /* Tuiles de couleur */
+  .tuiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 14px; }
+  .tuile { border-radius: 12px; overflow: hidden; background: var(--carte-2); border: 1px solid rgba(0, 0, 0, 0.25); display: flex; flex-direction: column; min-width: 0; }
+  .tuile-haut { position: relative; padding: 38px 12px 10px; min-height: 104px; overflow: hidden; }
+  .tuile-haut svg { position: absolute; right: -4px; top: 6px; width: 64px; height: 64px; stroke: rgba(255, 255, 255, 0.24); stroke-width: 1.7; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+  .tuile-valeur { position: relative; font-family: var(--titre); font-weight: 900; font-size: 27px; line-height: 1.05; font-variant-numeric: tabular-nums; text-shadow: 1px 2px 0 rgba(0, 0, 0, 0.25); }
+  .tuile-libelle { position: relative; font-family: var(--titre); font-weight: 900; font-size: 12.5px; text-transform: uppercase; margin-top: 3px; }
+  .tuile-bas { padding: 9px 12px; font-size: 12.5px; color: var(--texte-2); flex: 1; }
+  .t-orange .tuile-haut { background: linear-gradient(140deg, #cf8e2e, #8e5717); }
+  .t-bleu .tuile-haut { background: linear-gradient(140deg, #4384e6, #24519c); }
+  .t-vert .tuile-haut { background: linear-gradient(140deg, #43a05a, #24693b); }
+  .t-violet .tuile-haut { background: linear-gradient(140deg, #9150d4, #5c2a93); }
+  .t-rouge .tuile-haut { background: linear-gradient(140deg, #d64b40, #922820); }
+
+  /* Cartes */
+  .carte { background: var(--carte); border: 1px solid var(--bord); border-radius: 14px; min-width: 0; }
+  .carte-corps { padding: 18px 18px 16px; }
+  .carte-entete { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
+  .carte h2 { display: flex; align-items: center; gap: 9px; margin: 0; font-family: var(--titre); font-weight: 900; font-size: 18px; text-transform: uppercase; letter-spacing: 0.01em; }
+  .carte h2 svg { width: 20px; height: 20px; }
+  .sous { margin: 4px 0 0; color: var(--texte-2); font-size: 13px; }
+  .onglets { display: inline-flex; gap: 6px; }
+  .onglets button { border: 0; border-radius: 7px; padding: 8px 13px; background: #3a3c42; color: var(--texte); font-family: var(--titre); font-weight: 900; font-size: 13px; text-transform: uppercase; }
+  .onglets button:hover { background: #474a51; }
+  .onglets button[aria-pressed="true"] { background: #fff; color: #111; }
+  .options-graph { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 16px; flex-wrap: wrap; min-height: 36px; }
+  .legende { display: flex; gap: 14px; color: var(--texte-2); font-size: 13px; }
+  .legende span { display: inline-flex; align-items: center; gap: 6px; }
+  .legende i { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+  .carte-pied { display: flex; justify-content: space-between; align-items: center; gap: 12px 20px; flex-wrap: wrap; border-top: 1px solid var(--bord); padding: 12px 18px; color: var(--texte-2); font-size: 13px; }
+  .carte-pied p { margin: 0; }
+  .pied-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+  .lien { border: 0; background: transparent; color: var(--texte-2); padding: 6px 8px; border-radius: 6px; font-size: 13px; text-decoration: none; }
+  .lien:hover { color: var(--texte); background: rgba(255, 255, 255, 0.06); }
+
+  .graphique { position: relative; margin-top: 10px; }
+  .graphique svg { display: block; width: 100%; height: auto; overflow: visible; }
+  .graphique text { font-size: 11.5px; fill: var(--muet); font-variant-numeric: tabular-nums; }
+  .graphique .b .seg { transition: filter 0.1s; }
+  .graphique .b:hover .seg, .graphique .b:focus-within .seg { filter: brightness(1.18); }
+  .graphique .zone { fill: transparent; outline: none; }
+  .graphique .zone:focus-visible { stroke: var(--jaune); stroke-width: 2px; }
+  .infobulle {
+    position: absolute; top: 0; left: 0; pointer-events: none; display: none; z-index: 3;
+    background: #111214; border: 1px solid var(--bord); border-radius: 8px; padding: 8px 11px; font-size: 13px; width: max-content; max-width: 260px;
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.4);
+  }
+  .infobulle b { display: block; font-size: 13px; }
+  .infobulle span { display: block; color: var(--texte-2); }
+  .infobulle .val { color: var(--texte); font-variant-numeric: tabular-nums; }
+  .vide { color: var(--texte-2); text-align: center; padding: 70px 0 74px; }
+
+  .deux { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; }
+  .defile { overflow-x: auto; margin-top: 12px; }
   table { width: 100%; border-collapse: collapse; font-size: 13px; }
-  th { text-align: left; font-weight: 500; color: var(--ink-2); padding: 6px 8px; border-bottom: 1px solid var(--axis); white-space: nowrap; }
-  td { padding: 7px 8px; border-bottom: 1px solid var(--grid); white-space: nowrap; }
+  th { text-align: left; font-weight: 600; color: var(--muet); padding: 7px 8px; border-bottom: 1px solid var(--bord-2); white-space: nowrap; font-size: 12px; text-transform: uppercase; letter-spacing: 0.02em; }
+  td { padding: 8px; border-bottom: 1px solid var(--bord); white-space: nowrap; }
   tr:last-child td { border-bottom: 0; }
   .nb { text-align: right; font-variant-numeric: tabular-nums; }
-  td.fort { font-weight: 600; }
-  #plus { margin-top: 12px; }
-  .vide { color: var(--ink-2); font-size: 13px; padding: 16px 0; }
-
-  .note-carte { margin: 12px 0 0; color: var(--ink-2); font-size: 13px; }
-  .liste-lots { list-style: none; margin: 0; padding: 0; font-size: 13px; }
-  .liste-lots li { padding: 6px 0; border-bottom: 1px solid var(--grid); display: flex; justify-content: space-between; gap: 12px; }
+  td.fort { font-weight: 700; }
+  tr.non-compte td { color: var(--muet); }
+  .plus { margin-top: 10px; }
+  .liste-lots { list-style: none; margin: 12px 0 0; padding: 0; font-size: 13px; }
+  .liste-lots li { padding: 7px 0; border-bottom: 1px solid var(--bord); display: flex; justify-content: space-between; gap: 12px; }
   .liste-lots li:last-child { border-bottom: 0; }
-  .liste-lots span { color: var(--ink-2); }
-  tr.non-compte td { color: var(--muted); }
-  footer { color: var(--ink-2); font-size: 13px; }
-  footer p { margin: 0 0 6px; }
-  footer strong { color: var(--ink); font-weight: 600; }
+  .liste-lots span { color: var(--texte-2); }
+  .note-carte { margin: 12px 0 0; color: var(--texte-2); font-size: 13px; }
+
+  footer { color: var(--muet); font-size: 12.5px; text-align: center; display: grid; gap: 6px; padding: 4px 0 8px; }
+  footer p { margin: 0; }
+  footer details { text-align: left; color: var(--texte-2); background: var(--carte); border: 1px solid var(--bord); border-radius: 12px; padding: 12px 16px; }
+  footer summary { cursor: pointer; font-weight: 600; color: var(--texte); }
+  footer details p { margin: 8px 0 0; }
+
+  /* Fenetre des reglages */
+  dialog { border: 1px solid var(--bord); border-radius: 14px; background: var(--carte); color: var(--texte); padding: 0; width: min(460px, calc(100vw - 32px)); box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55); }
+  dialog::backdrop { background: rgba(0, 0, 0, 0.55); }
+  dialog form { display: grid; gap: 16px; padding: 20px; }
+  dialog h2 { margin: 0; font-family: var(--titre); font-weight: 900; font-size: 19px; text-transform: uppercase; }
+  .champ { display: grid; gap: 6px; }
+  .champ-titre { font-weight: 700; display: block; }
+  .champ .ligne { display: flex; align-items: center; gap: 8px; }
+  .champ .ligne > span { white-space: nowrap; flex: none; }
+  .champ input[type="text"], .champ input:not([type]) { width: 100%; min-width: 0; background: #17181b; border: 1px solid var(--bord-2); border-radius: 8px; padding: 8px 10px; font-variant-numeric: tabular-nums; }
+  .champ input[aria-invalid="true"] { border-color: var(--rouge); }
+  .aide-texte { color: var(--texte-2); font-size: 12.5px; }
+  .case { display: flex; gap: 10px; align-items: flex-start; cursor: pointer; }
+  .case input { width: 17px; height: 17px; margin: 2px 0 0; accent-color: var(--jaune); flex: none; }
+  .erreur { margin: 0; color: #ff8c84; font-size: 13px; min-height: 0; }
+  .erreur:empty { display: none; }
+  .dialog-pied { display: flex; justify-content: flex-end; gap: 8px; }
+
+  .toast {
+    position: fixed; left: 50%; bottom: 22px; transform: translate(-50%, 20px); opacity: 0; pointer-events: none; z-index: 20;
+    background: #111214; border: 1px solid var(--bord-2); border-radius: 10px; padding: 10px 16px; font-size: 13.5px; max-width: calc(100vw - 32px);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5); transition: opacity 0.2s, transform 0.2s;
+  }
+  .toast.visible { opacity: 1; transform: translate(-50%, 0); }
+  .toast.erreur-toast { border-color: rgba(229, 83, 75, 0.7); }
+
+  @media (max-width: 860px) {
+    .hero { grid-template-columns: minmax(0, 1fr); gap: 22px; }
+    .depot { min-height: 0; }
+  }
+  @media (max-width: 520px) {
+    .barre-haut .dedans, main { padding-left: 16px; padding-right: 16px; }
+    .marque { font-size: 15px; }
+    .commandes { flex-wrap: nowrap; }
+    .bascule { flex: 1; min-width: 0; }
+    .bascule button { flex: 1 1 0; min-width: 0; justify-content: center; flex-wrap: wrap; gap: 4px; white-space: normal; text-align: center; padding: 7px 6px; font-size: 12px; }
+    .carte-corps { padding: 16px 14px 14px; }
+    .carte-pied { padding: 12px 14px; }
+    .deux { grid-template-columns: minmax(0, 1fr); }
+  }
 </style>
 </head>
 <body>
-<main>
-  <header>
-    <h1>Mes coffres Fortnite</h1>
-    <p id="maj"></p>
-  </header>
+<header class="barre-haut">
+  <div class="dedans">
+    <a class="marque" href="/" aria-label="Compteur de coffres, accueil">
+      <svg viewBox="0 0 32 32" aria-hidden="true">
+        <path d="M4 14v-3.5C4 7 7 5 10.5 5h11C25 5 28 7 28 10.5V14z" fill="#c07a2a" stroke="#3b2208" stroke-width="1.6"/>
+        <rect x="4" y="14" width="24" height="13" rx="1.5" fill="#8e531b" stroke="#3b2208" stroke-width="1.6"/>
+        <path d="M4 14h24" stroke="#fcc937" stroke-width="2.4"/>
+        <rect x="13.5" y="11.5" width="5" height="7" rx="1.2" fill="#fcc937" stroke="#3b2208" stroke-width="1.4"/>
+      </svg>
+      Compteur de coffres
+    </a>
+    <nav class="liens-haut">
+      <a href="/overlay" target="_blank" rel="noopener" title="Version pour OBS (fond transparent)" aria-label="Version pour OBS">
+        <svg class="icone" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg>
+      </a>
+      <a href="https://github.com/Mm2Update/compteur-coffres-fortnite" target="_blank" rel="noopener" title="Code source sur GitHub" aria-label="Code source sur GitHub">
+        <svg class="icone" viewBox="0 0 24 24" aria-hidden="true"><path d="m8 7-5 5 5 5M16 7l5 5-5 5M13.5 4l-3 16"/></svg>
+      </a>
+    </nav>
+  </div>
+</header>
 
-  <section class="carte alerte" id="alerte" role="alert">
-    <span class="icone" aria-hidden="true">⚠</span>
+<main>
+  <section class="alerte" id="alerte" role="alert" hidden>
+    <svg class="icone" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 2 20h20zM12 10v4M12 17.5v.5"/></svg>
     <div><strong id="alerte-titre"></strong><p id="alerte-texte"></p></div>
   </section>
 
-  <section class="carte hero">
-    <div class="libelle">Coffres au total</div>
-    <div class="valeur" id="total"></div>
-    <p class="note" id="calage"></p>
-    <div class="jauge" id="jauge">
-      <div class="piste"><div class="rempli" id="rempli"></div></div>
-      <p class="legende" id="jauge-legende"></p>
+  <section class="hero">
+    <div>
+      <p class="periode" id="periode"></p>
+      <div class="gros-nombre" id="total">0</div>
+      <div class="mot-coffres" id="mot-coffres">Coffres</div>
+      <p class="chance">
+        <span class="aide-survol" tabindex="0" aria-describedby="chance-bulle"><span id="chance">0 %</span><span class="bulle" id="chance-bulle" role="tooltip"></span></span>
+        <span id="chance-texte"></span>
+      </p>
+      <p class="quete" id="quete" hidden></p>
+      <div class="commandes">
+        <div class="bascule" role="group" aria-label="Coffres comptés">
+          <button type="button" id="b-toi" aria-pressed="true">Rien que toi <span class="pastille" id="n-toi">0</span></button>
+          <button type="button" id="b-equipe" aria-pressed="false">Avec tes coéquipiers <span class="pastille" id="n-equipe">0</span></button>
+        </div>
+        <button type="button" class="bouton-icone" id="b-reglages" aria-label="Réglages" title="Réglages">
+          <svg class="icone" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2.5v2.6M12 18.9v2.6M2.5 12h2.6M18.9 12h2.6M5.3 5.3l1.8 1.8M16.9 16.9l1.8 1.8M5.3 18.7l1.8-1.8M16.9 7.1l1.8-1.8"/><circle cx="12" cy="12" r="6.6"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <div class="depot" id="depot">
+      <svg class="icone nuage" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 18.5a4.5 4.5 0 0 1-.7-8.95A6 6 0 0 1 17.8 9a4.3 4.3 0 0 1 .7 8.5"/><path d="M12 12.5v8M8.8 15.6 12 12.4l3.2 3.2"/></svg>
+      <p class="depot-titre">Dépose des replays ou un dossier ici</p>
+      <div class="depot-boutons" id="depot-boutons">
+        <button type="button" class="bouton" id="b-fichiers">Choisir des fichiers</button>
+        <button type="button" class="bouton" id="b-dossier">Choisir un dossier</button>
+      </div>
+      <p class="depot-note" id="depot-note">Tes parties sur ce PC sont comptées toutes seules. Ajoute ici les replays d'un autre PC ou d'une sauvegarde : ils restent sur ton ordinateur. Fortnite les range dans <code>%LOCALAPPDATA%\FortniteGame\Saved\Demos</code></p>
+      <p class="statut" id="statut"><span class="voyant" id="voyant"></span><span id="statut-texte">Compteur en marche</span></p>
+      <input type="file" id="f-fichiers" accept=".replay" multiple hidden>
+      <input type="file" id="f-dossier" webkitdirectory hidden>
     </div>
   </section>
-
-  <div class="filtres">
-    <label>Période
-      <select id="periode">
-        <option value="tout">Tout</option>
-        <option value="30">30 derniers jours</option>
-        <option value="7">7 derniers jours</option>
-        <option value="jour">Aujourd'hui</option>
-      </select>
-    </label>
-    <label>Mode <select id="mode"></select></label>
-  </div>
 
   <section class="tuiles" aria-label="Chiffres clés">
-    <div class="carte tuile"><div class="libelle">Moyenne par partie</div><div class="valeur" id="t-moyenne"></div><div class="detail" id="t-moyenne-d"></div></div>
-    <div class="carte tuile"><div class="libelle">Comptés dans les replays</div><div class="valeur" id="t-somme"></div><div class="detail" id="t-somme-d"></div></div>
-    <div class="carte tuile"><div class="libelle">Record en une partie</div><div class="valeur" id="t-record"></div><div class="detail" id="t-record-d"></div></div>
-    <div class="carte tuile"><div class="libelle">Coffres cassés détectés</div><div class="valeur" id="t-casses"></div><div class="detail" id="t-casses-d"></div></div>
-    <div class="carte tuile" id="tuile-escouade" hidden><div class="libelle">Total d'escouade</div><div class="valeur" id="t-escouade"></div><div class="detail" id="t-escouade-d"></div></div>
+    <article class="tuile t-orange">
+      <div class="tuile-haut">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="7.5" cy="12" r="4.5"/><path d="M12 12h10M18.5 12v3.5M21.5 12v2.5"/></svg>
+        <div class="tuile-valeur" id="v-toi">0</div><div class="tuile-libelle">Par toi</div>
+      </div>
+      <div class="tuile-bas" id="d-toi"></div>
+    </article>
+    <article class="tuile t-bleu">
+      <div class="tuile-haut">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="7.5" r="3.2"/><path d="M6 21v-2.5a6 6 0 0 1 12 0V21"/><circle cx="4.5" cy="9.5" r="2.2"/><circle cx="19.5" cy="9.5" r="2.2"/><path d="M1 19v-1.5A3.5 3.5 0 0 1 4.5 14M23 19v-1.5a3.5 3.5 0 0 0-3.5-3.5"/></svg>
+        <div class="tuile-valeur" id="v-equipe">0</div><div class="tuile-libelle">Coffres des coéquipiers</div>
+      </div>
+      <div class="tuile-bas" id="d-equipe"></div>
+    </article>
+    <article class="tuile t-vert">
+      <div class="tuile-haut">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5 2.5 7.5 12 12.5l9.5-5z"/><path d="m2.5 12 9.5 5 9.5-5M2.5 16.5l9.5 5 9.5-5"/></svg>
+        <div class="tuile-valeur" id="v-moyenne">0</div><div class="tuile-libelle">Par partie</div>
+      </div>
+      <div class="tuile-bas" id="d-moyenne">en moyenne</div>
+    </article>
+    <article class="tuile t-violet">
+      <div class="tuile-haut">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3.5h10v6a5 5 0 0 1-10 0z"/><path d="M7 5.5H3.5V7A3.5 3.5 0 0 0 7 10.5M17 5.5h3.5V7a3.5 3.5 0 0 1-3.5 3.5M12 14.5v3.5M8 21h8M9.5 18h5"/></svg>
+        <div class="tuile-valeur" id="v-record">0</div><div class="tuile-libelle">Meilleure partie</div>
+      </div>
+      <div class="tuile-bas" id="d-record"></div>
+    </article>
+    <article class="tuile t-rouge">
+      <div class="tuile-haut">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 18a8.5 8.5 0 1 1 17 0"/><path d="m12 18 4.5-6M12 6v1.5M5.5 11.5l1.2.8M18.5 11.5l-1.2.8"/></svg>
+        <div class="tuile-valeur" id="v-minute">0</div><div class="tuile-libelle">Par minute</div>
+      </div>
+      <div class="tuile-bas">de temps de partie</div>
+    </article>
   </section>
 
-  <div class="deux">
-    <section class="carte">
-      <h2>Tes chances</h2>
-      <p class="sous-titre" id="chances-sous-titre"></p>
-      <div class="defile"><table id="chances"></table></div>
-      <p class="note-carte" id="heure-tresor"></p>
-    </section>
-    <section class="carte">
-      <h2>Ta collection</h2>
-      <p class="sous-titre" id="semaine"></p>
-      <div id="collection"></div>
-      <p class="note-carte" id="autres"></p>
-    </section>
-  </div>
-
   <section class="carte">
-    <h2>Coffres par partie</h2>
-    <p class="sous-titre" id="graph-sous-titre"></p>
-    <div class="graphique" id="graphique">
-      <div class="infobulle" id="infobulle" role="tooltip"></div>
+    <div class="carte-corps">
+      <div class="carte-entete">
+        <div>
+          <h2><svg class="icone" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 20v-8M10 20V5M15 20v-11M20 20v-5" stroke-width="3"/></svg>Coffres par partie</h2>
+          <p class="sous" id="graph-sous"></p>
+        </div>
+        <div class="onglets" role="group" aria-label="Affichage">
+          <button type="button" data-vue="graph" aria-pressed="true">Graphique</button>
+          <button type="button" data-vue="table" aria-pressed="false">Tableau</button>
+        </div>
+      </div>
+      <div id="vue-graph">
+        <div class="options-graph">
+          <div class="legende" id="legende"></div>
+          <div class="onglets" role="group" aria-label="Regroupement">
+            <button type="button" data-groupe="partie" aria-pressed="true">Par partie</button>
+            <button type="button" data-groupe="jour" aria-pressed="false">Par jour</button>
+          </div>
+        </div>
+        <div class="graphique" id="graphique"><div class="infobulle" id="infobulle" role="tooltip"></div></div>
+      </div>
+      <div id="vue-table" hidden>
+        <div class="defile"><table id="parties"></table></div>
+        <button type="button" class="bouton plus" id="plus"></button>
+      </div>
+    </div>
+    <div class="carte-pied">
+      <p>Enregistré par le compteur sur ton PC : ton total reste même quand Fortnite supprime ses vieux replays. Exporte une copie pour être tranquille.</p>
+      <div class="pied-actions" id="pied-actions">
+        <button type="button" class="lien" id="b-importer">Importer</button>
+        <a class="lien" id="b-exporter" href="/exporter" download>Exporter</a>
+        <input type="file" id="f-import" accept=".json,application/json" hidden>
+      </div>
     </div>
   </section>
 
   <div class="deux">
-    <section class="carte">
-      <h2>Par mode</h2>
-      <p class="sous-titre">Du mode le plus joué au moins joué</p>
-      <div class="defile"><table id="par-mode"></table></div>
-    </section>
-    <section class="carte">
-      <h2>Par type de coffre</h2>
-      <p class="sous-titre">Coffres ouverts et cassés</p>
-      <div class="defile"><table id="par-type"></table></div>
-    </section>
+    <section class="carte"><div class="carte-corps">
+      <h2><svg class="icone" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Tes chances</h2>
+      <p class="sous" id="chances-sous"></p>
+      <div class="defile"><table id="chances"></table></div>
+      <p class="note-carte" id="heure-tresor"></p>
+    </div></section>
+    <section class="carte"><div class="carte-corps">
+      <h2><svg class="icone" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5 14.8 8.3l6.2.8-4.5 4.3 1.1 6.2L12 16.6l-5.6 3 1.1-6.2L3 9.1l6.2-.8z"/></svg>Ta collection</h2>
+      <p class="sous" id="semaine"></p>
+      <div id="collection"></div>
+      <p class="note-carte" id="autres"></p>
+    </div></section>
   </div>
 
-  <section class="carte">
-    <h2>Parties</h2>
-    <p class="sous-titre">De la plus récente à la plus ancienne</p>
-    <div class="defile"><table id="parties"></table></div>
-    <button id="plus" type="button"></button>
-  </section>
+  <div class="deux">
+    <section class="carte"><div class="carte-corps">
+      <h2>Par mode</h2>
+      <p class="sous">Du mode le plus joué au moins joué</p>
+      <div class="defile"><table id="par-mode"></table></div>
+    </div></section>
+    <section class="carte"><div class="carte-corps">
+      <h2>Par type de coffre</h2>
+      <p class="sous">Tes coffres ouverts et cassés</p>
+      <div class="defile"><table id="par-type"></table></div>
+    </div></section>
+  </div>
 
   <footer>
-    <p><strong>Comment c'est compté.</strong> Après chaque partie, le programme lit le replay enregistré par Fortnite. Chaque coffre indique qui l'a fouillé : il compte comme ouvert quand c'est toi, y compris quand un coffre rechargé pendant la partie est rouvert. Quand un coffre est détruit, le replay indique aussi qui l'a cassé : en voiture si tu étais dans un véhicule, à pied sinon, le plus souvent à la pioche. Un coffre qui tombe parce que tu as cassé son support est retrouvé grâce à son butin, qui retombe à côté de toi. Seul le Battle Royale de la saison compte, avec ou sans construction : le classé, OG, Reload, les modes temporaires et le Créatif sont affichés mais pas comptés.</p>
-    <p><strong>Chances.</strong> Les chances par coffre sont celles publiées par Epic. Pendant les heures au trésor, certaines sont multipliées. Les chances sont calculées avec tous tes coffres, ouverts et cassés, plus ceux ajoutés à la main. Méthode et données reprises du projet libre ChestCounter (LED-N, licence MIT) ; ce compteur ne se connecte à rien.</p>
-    <p><strong>Précision.</strong> C'est une estimation. Lors des tests, l'écart avec la quête du jeu était d'environ 1 %. Si tu indiques ce que ta quête affiche, le total repart de cette valeur. La quête ne compte que les coffres ouverts : les coffres cassés s'ajoutent seulement au total. Seules les parties jouées sur ce PC avec les replays activés sont comptées. Une mise à jour de Fortnite peut casser la lecture : un message s'affiche alors en haut de cette page.</p>
+    <details>
+      <summary>Comment c'est compté</summary>
+      <p>Après chaque partie, le compteur lit le replay enregistré par Fortnite. Chaque coffre indique qui l'a fouillé : il compte comme ouvert quand c'est toi, y compris quand un coffre rechargé pendant la partie est rouvert. Quand un coffre est détruit, le replay indique aussi qui l'a cassé : en voiture si tu étais dans un véhicule, à pied sinon. Un coffre qui tombe parce que tu as cassé son support est retrouvé grâce à son butin. Seul le Battle Royale de la saison compte, avec ou sans construction : le classé, OG, Reload, les modes temporaires et le Créatif sont affichés mais pas comptés.</p>
+      <p>Les coffres de tes coéquipiers sont comptés avec les mêmes règles, mais un replay ne montre que ce qui se passe autour de toi : un coffre ouvert loin de toi n'y figure pas, leur vrai nombre est sans doute plus grand.</p>
+      <p>Chances : chaque coffre, ouvert ou cassé, a ses chances publiées par Epic, multipliées pendant les heures au trésor. Avec tes coéquipiers, leurs coffres comptent aussi, car un trésor trouvé dans l'escouade est remis à tout le monde. C'est une estimation : lors des tests, l'écart avec la quête du jeu était d'environ 1 %. Le compteur ne se connecte à rien.</p>
+    </details>
+    <p>Méthode de comptage et données de la chasse au trésor reprises de ChestCounter (LED-N, licence MIT). Présentation inspirée du site Fortnite Chest Counter (Jose-AE).</p>
+    <p>Compteur de coffres est un outil fait par des fans. Il n'est ni affilié à Epic Games, ni approuvé ou sponsorisé par Epic Games. Fortnite est une marque d'Epic Games, Inc.</p>
   </footer>
 </main>
+
+<dialog id="reglages" aria-labelledby="reglages-titre">
+  <form id="form-reglages" novalidate>
+    <div>
+      <h2 id="reglages-titre">Réglages</h2>
+      <p class="aide-texte" style="margin: 4px 0 0">Enregistrés par le compteur sur ton PC et inclus quand tu exportes.</p>
+    </div>
+    <label class="champ">
+      <span class="champ-titre">Chance d'avoir l'accès à la boutique</span>
+      <span class="ligne"><span>1 sur</span><input id="r-cote" inputmode="numeric" autocomplete="off"></span>
+      <span class="aide-texte">Par coffre, ouvert ou cassé. Chance publiée par Epic : 1 sur <span id="r-cote-epic"></span>. <button type="button" class="lien" id="r-cote-remettre" style="padding: 0 2px; text-decoration: underline">Remettre</button></span>
+    </label>
+    <label class="champ">
+      <span class="champ-titre">Coffres hors replays</span>
+      <input id="r-avant" inputmode="numeric" autocomplete="off">
+      <span class="aide-texte">Des parties dont tu n'as pas le replay, par exemple d'avant le compteur. Ajoutés au total et aux chances, pas au graphique ni aux moyennes.</span>
+    </label>
+    <label class="champ">
+      <span class="champ-titre">Ta quête « Ouvrir des coffres »</span>
+      <input id="r-quete" inputmode="numeric" autocomplete="off" placeholder="Ce que la quête affiche maintenant">
+      <span class="aide-texte" id="r-quete-aide"></span>
+    </label>
+    <label class="case">
+      <input type="checkbox" id="r-boutique">
+      <span><span class="champ-titre">J'ai eu l'accès à la boutique</span><span class="aide-texte">Le replay ne dit pas toujours quel trésor t'a été remis. Coche ici si tu l'as eu : le compteur affiche « obtenu ✓ » à la place de ta chance.</span></span>
+    </label>
+    <label class="case">
+      <input type="checkbox" id="r-relire">
+      <span><span class="champ-titre">Relire tous les replays</span><span class="aide-texte">Recompte les replays encore présents et remplace leurs anciens chiffres. Utile après une mise à jour du compteur. Prend quelques minutes.</span></span>
+    </label>
+    <p class="erreur" id="r-erreur" role="alert"></p>
+    <div class="dialog-pied">
+      <button type="button" class="bouton" id="r-annuler">Annuler</button>
+      <button type="submit" class="bouton principal" id="r-enregistrer">Enregistrer</button>
+    </div>
+  </form>
+</dialog>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script>const DONNEES = /*DONNEES*/null;</script>
 <script>
 "use strict";
+const D = DONNEES;
 const $ = id => document.getElementById(id);
 const nf = new Intl.NumberFormat("fr-FR");
 const nf1 = new Intl.NumberFormat("fr-FR", { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+const nfFois = new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 1 });
+const fCourt = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "short" });
 const fDate = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
-const fJour = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "short" });
+const fDateLongue = new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" });
+const fJourMoyen = new Intl.DateTimeFormat("fr-FR", { weekday: "long", day: "numeric", month: "long" });
+const fJourLong = new Intl.DateTimeFormat("fr-FR", { weekday: "long", day: "numeric", month: "long" });
+const fHeure = new Intl.DateTimeFormat("fr-FR", { hour: "2-digit", minute: "2-digit" });
+const nfPc = [0, 1, 2, 3].map(d => new Intl.NumberFormat("fr-FR", { minimumFractionDigits: d, maximumFractionDigits: d }));
+const ACTIONS = location.protocol === "http:";
 
 const NOMS_MODES = {
-  NoBuildBR_Solo: "Zero Build · Solo", NoBuildBR_Duo: "Zero Build · Duo",
-  NoBuildBR_Trio: "Zero Build · Trio", NoBuildBR_Squad: "Zero Build · Escouade",
-  DefaultSolo: "Battle Royale · Solo", DefaultDuo: "Battle Royale · Duo",
-  trios: "Battle Royale · Trio", DefaultSquad: "Battle Royale · Escouade",
+  NoBuildBR_Solo: "Zero Build · Solo", NoBuildBR_Duo: "Zero Build · Duo", NoBuildBR_Duos: "Zero Build · Duo",
+  NoBuildBR_Trio: "Zero Build · Trio", NoBuildBR_Trios: "Zero Build · Trio",
+  NoBuildBR_Squad: "Zero Build · Escouade", NoBuildBR_Squads: "Zero Build · Escouade",
+  DefaultSolo: "Battle Royale · Solo", DefaultDuo: "Battle Royale · Duo", DefaultDuos: "Battle Royale · Duo",
+  DefaultTrio: "Battle Royale · Trio", DefaultTrios: "Battle Royale · Trio", Trios: "Battle Royale · Trio", trios: "Battle Royale · Trio",
+  DefaultSquad: "Battle Royale · Escouade", DefaultSquads: "Battle Royale · Escouade",
 };
 const nomMode = m => NOMS_MODES[m] || m;
 const pluriel = (n, s, p) => nf.format(n) + " " + (n > 1 ? p : s);
+const duree = minutes => nf.format(Math.round(minutes)) + " min";
+function pourcentage(v) {
+  const p = v * 100;
+  if (p >= 99.95 && v < 1) return "> 99,9 %"; // jamais 100 % : chaque coffre reste un tirage
+  return nfPc[p >= 10 ? 0 : p >= 1 ? 1 : p >= 0.1 ? 2 : 3].format(p) + " %";
+}
+const coffresPour = (unSur, chance) => unSur <= 1 ? 1 : Math.ceil(Math.log(1 - chance) / Math.log1p(-1 / unSur));
 
-function lire(cle, defaut) { try { return sessionStorage.getItem(cle) ?? defaut; } catch { return defaut; } }
-function ecrire(cle, val) { try { sessionStorage.setItem(cle, val); } catch { /* facultatif */ } }
+// Preferences d'affichage de ce navigateur : facultatives, la page marche sans.
+const pref = {
+  lire(cle, defaut) { try { return localStorage.getItem("compteur-" + cle) ?? defaut; } catch { return defaut; } },
+  ecrire(cle, valeur) { try { localStorage.setItem("compteur-" + cle, valeur); } catch { /* facultatif */ } },
+};
 
-const parties = DONNEES.parties.map(p => ({ ...p, date: new Date(p.fin) }));
-let toutAfficher = lire("tout", "0") === "1";
+const parties = D.parties.map(p => ({ ...p, date: new Date(p.fin) })).sort((a, b) => a.date - b.date);
+const comptees = parties.filter(p => p.compte);
+let avecEquipe = pref.lire("equipe", D.escouadeParDefaut ? "1" : "0") === "1";
+let vue = pref.lire("vue", "graph") === "table" ? "table" : "graph";
+let groupe = pref.lire("groupe", "partie") === "jour" ? "jour" : "partie";
+let toutAfficher = false;
+const compte = p => p.total + (avecEquipe ? (p.equipe || 0) : 0);
+const somme = (l, f) => l.reduce((s, p) => s + f(p), 0);
 
-function remplirEntete() {
-  $("maj").textContent = "Mis à jour le " + fDate.format(new Date(DONNEES.genereLe)) + " · comptage automatique";
-  $("total").textContent = nf.format(DONNEES.total);
-  if (!DONNEES.calage) {
-    // Quête non indiquée : le total est simplement tout ce que les replays contiennent.
-    const premiere = parties.length ? " depuis le " + fJour.format(parties[0].date) : "";
-    let phrase = "Coffres ouverts et cassés dans tes replays" + premiere;
-    if (!phrase.endsWith(".")) phrase += ".";
-    $("calage").textContent = phrase + (DONNEES.coffresAvant ? " Plus " + nf.format(DONNEES.coffresAvant) + " coffres d'avant le compteur, ajoutés à la main." : "") +
-      " Pour suivre ta quête, fais un clic droit sur le coffre près de l'horloge, puis « Indiquer où en est ma quête ».";
-    $("jauge").style.display = "none";
-  } else {
-    const depuis = DONNEES.quete - DONNEES.calage.valeur;
-    const casses = DONNEES.total - DONNEES.quete;
-    $("calage").textContent = nf.format(DONNEES.calage.valeur) + " sur ta quête le " + fDate.format(new Date(DONNEES.calage.date)) +
-      " + " + nf.format(depuis) + " ouverts depuis + " + nf.format(casses) + " cassés.";
-    const reste = DONNEES.objectif - DONNEES.quete;
-    if (reste > 0) {
-      $("rempli").style.width = (DONNEES.quete / DONNEES.objectif * 100) + "%";
-      $("jauge-legende").textContent = "Quête estimée : " + nf.format(DONNEES.quete) + " sur " + nf.format(DONNEES.objectif) + ". Encore environ " +
-        pluriel(reste, "coffre", "coffres") + " à ouvrir : les coffres cassés ne la font pas avancer.";
-    } else {
-      $("jauge").style.display = "none";
-      $("calage").textContent += " La quête s'arrête à " + nf.format(DONNEES.objectif) + " : ce compteur continue.";
-    }
+function rendreHaut() {
+  const total = avecEquipe ? D.totalEquipe : D.total;
+  $("total").textContent = nf.format(total);
+  $("total").classList.toggle("long", total >= 100000);
+  $("mot-coffres").textContent = total > 1 ? "Coffres" : "Coffre";
+  const n = comptees.length;
+  $("periode").textContent = n === 0
+    ? "Ajoute tes replays pour commencer"
+    : (n === 1 || comptees[0].date.toDateString() === comptees[n - 1].date.toDateString()
+      ? "Le " + fCourt.format(comptees[n - 1].date)
+      : "Du " + fCourt.format(comptees[0].date) + " au " + fCourt.format(comptees[n - 1].date)) + " · " + pluriel(n, "partie", "parties");
+
+  const b = D.boutique;
+  if (b.obtenue) {
+    $("chance").textContent = "Accès à la boutique obtenu ✓";
+    $("chance").classList.add("obtenu");
+    $("chance-texte").textContent = "";
+    $("chance-bulle").textContent = "Bravo ! Tu as indiqué l'avoir eu le " + fCourt.format(new Date(b.obtenue)).replace(/\.$/, "") + ". Avant ça, avec tes coffres, tu avais " +
+      pourcentage(b.chance) + " de chance de l'avoir (1 sur " + nf.format(b.unSur) + " par coffre). Pour l'enlever : roue dentée, puis décoche la case.";
+    return rendreQueteEtBascule();
   }
+  $("chance").textContent = pourcentage(avecEquipe ? b.chanceEquipe : b.chance);
+  $("chance-texte").textContent = avecEquipe ? "de chance que l'escouade ait eu l'accès à la boutique" : "de chance d'avoir eu l'accès à la boutique";
+  $("chance-bulle").textContent = "Chaque coffre, ouvert ou cassé, a 1 chance sur " + nf.format(b.unSur) +
+    " de donner l'accès à la boutique pirate, davantage pendant les heures au trésor. Chaque coffre est un tirage à part : il faut environ " +
+    nf.format(coffresPour(b.unSur, 0.5)) + " coffres pour avoir une chance sur deux, pas une garantie." +
+    (avecEquipe ? " Avec tes coéquipiers, leurs coffres comptent aussi : un trésor trouvé dans l'escouade est remis à tout le monde." : "") +
+    (b.unSur !== b.unSurEpic ? " Chance modifiée dans les réglages." : "") +
+    " Si tu l'as eu, coche-le dans les réglages (roue dentée).";
+  rendreQueteEtBascule();
+}
+
+function rendreQueteEtBascule() {
+  const q = $("quete");
+  if (D.calage && D.quete != null) {
+    q.hidden = false;
+    const reste = D.objectif - D.quete;
+    q.replaceChildren("Quête « Ouvrir des coffres » : ");
+    const fort = document.createElement("b");
+    fort.textContent = nf.format(D.quete) + " / " + nf.format(D.objectif);
+    q.append(fort, reste > 0 ? " · encore " + pluriel(reste, "coffre", "coffres") + " à ouvrir" : " · terminée ✓");
+  }
+
+  $("n-toi").textContent = nf.format(D.total);
+  $("n-equipe").textContent = nf.format(D.totalEquipe);
+  $("b-toi").setAttribute("aria-pressed", String(!avecEquipe));
+  $("b-equipe").setAttribute("aria-pressed", String(avecEquipe));
+
   const titres = [];
-  if (DONNEES.echecs.length) titres.push(pluriel(DONNEES.echecs.length, "replay illisible", "replays illisibles"));
-  if (DONNEES.suspectes) titres.push(pluriel(DONNEES.suspectes, "partie mal lue", "parties mal lues"));
+  if (D.echecs.length) titres.push(pluriel(D.echecs.length, "replay illisible", "replays illisibles"));
+  if (D.suspectes) titres.push(pluriel(D.suspectes, "partie mal lue", "parties mal lues"));
   if (titres.length) {
-    $("alerte").classList.add("visible");
+    $("alerte").hidden = false;
     $("alerte-titre").textContent = "Attention : " + titres.join(" et ");
-    $("alerte-texte").textContent = DONNEES.suspectes
-      ? "Ces parties ne sont peut-être pas comptées. Une mise à jour de Fortnite a sans doute changé le format des replays : le programme devra être mis à jour."
+    $("alerte-texte").textContent = D.suspectes
+      ? "Ces parties ne sont peut-être pas comptées. Une mise à jour de Fortnite a sans doute changé le format des replays : le compteur devra être mis à jour."
       : "Ces replays n'ont pas pu être lus : leurs coffres ne sont pas comptés. Ça arrive parfois avec un replay abîmé. Si ça se répète à chaque partie, une mise à jour de Fortnite a sans doute changé le format des replays.";
   }
 }
 
-function remplirFiltres() {
-  const modes = [...new Set(parties.map(p => p.mode))].sort((a, b) => nomMode(a).localeCompare(nomMode(b), "fr"));
-  const sel = $("mode");
-  const tous = document.createElement("option");
-  tous.value = "tous"; tous.textContent = "Tous";
-  sel.appendChild(tous);
-  for (const m of modes) {
-    const o = document.createElement("option");
-    o.value = m; o.textContent = nomMode(m);
-    sel.appendChild(o);
-  }
-  const m = lire("mode", "tous");
-  sel.value = modes.includes(m) ? m : "tous";
-  $("periode").value = lire("periode", "tout");
-  for (const id of ["periode", "mode"]) {
-    $(id).addEventListener("change", () => { ecrire(id, $(id).value); rendre(); });
-  }
+function rendreTuiles() {
+  const n = comptees.length;
+  const ouverts = somme(comptees, p => p.ouverts), casses = somme(comptees, p => p.casses);
+  $("v-toi").textContent = nf.format(ouverts + casses);
+  $("d-toi").textContent = pluriel(ouverts, "ouvert", "ouverts") + " · " + pluriel(casses, "cassé", "cassés");
+  const equipe = somme(comptees, p => p.equipe || 0);
+  const aPlusieurs = comptees.filter(p => (p.equipiers || 0) > 0 || (p.equipe || 0) > 0).length;
+  $("v-equipe").textContent = nf.format(equipe);
+  $("d-equipe").textContent = aPlusieurs ? "dans " + pluriel(aPlusieurs, "partie", "parties") + " à plusieurs" : "aucune partie à plusieurs";
+  const tous = somme(comptees, compte);
+  $("v-moyenne").textContent = n ? nf1.format(tous / n) : "0";
+  const record = comptees.reduce((r, p) => (!r || compte(p) > compte(r) ? p : r), null);
+  $("v-record").textContent = record ? nf.format(compte(record)) : "0";
+  $("d-record").textContent = record ? fDateLongue.format(record.date) : "aucune partie";
+  const minutes = somme(comptees, p => p.minutes);
+  $("v-minute").textContent = minutes > 0 ? nf1.format(tous / minutes) : "0";
 }
 
-// Les chiffres ne prennent que les parties comptées (Battle Royale de la saison) ; le tableau des parties montre tout.
-function filtrees(toutes) {
-  const per = $("periode").value, mode = $("mode").value, maintenant = new Date();
-  return parties.filter(p => {
-    if (!toutes && !p.compte) return false;
-    if (mode !== "tous" && p.mode !== mode) return false;
-    if (per === "jour") return p.date.toDateString() === maintenant.toDateString();
-    if (per !== "tout") return maintenant - p.date <= Number(per) * 86400000;
-    return true;
-  });
-}
-
-function rendreTuiles(l) {
-  const somme = l.reduce((s, p) => s + p.total, 0);
-  const moy = l.length ? somme / l.length : 0;
-  const record = l.reduce((r, p) => (!r || p.total > r.total ? p : r), null);
-  $("t-moyenne").textContent = l.length ? nf1.format(moy) : "–";
-  $("t-moyenne-d").textContent = pluriel(l.length, "partie", "parties");
-  $("t-somme").textContent = nf.format(somme);
-  $("t-somme-d").textContent = l.length ? "Du " + fJour.format(l[0].date) + " au " + fJour.format(l[l.length - 1].date) : "Aucune partie";
-  $("t-record").textContent = record ? nf.format(record.total) : "–";
-  $("t-record-d").textContent = record ? fDate.format(record.date) : "";
-  const aPied = l.reduce((s, p) => s + p.aPied, 0), voiture = l.reduce((s, p) => s + p.voiture, 0);
-  $("t-casses").textContent = nf.format(aPied + voiture);
-  const tombes = l.reduce((s, p) => s + (p.tombes || 0), 0);
-  $("t-casses-d").textContent = nf.format(aPied) + " à pied · " + nf.format(voiture) + " en voiture" + (tombes ? " · dont " + nf.format(tombes) + " tombés" : "");
-  if (DONNEES.escouade) {
-    $("tuile-escouade").hidden = false;
-    const equipe = l.reduce((s, p) => s + p.total + (p.equipe || 0), 0);
-    $("t-escouade").textContent = nf.format(equipe);
-    $("t-escouade-d").textContent = "toi " + nf.format(l.reduce((s, p) => s + p.total, 0)) + " · tes coéquipiers " + nf.format(equipe - l.reduce((s, p) => s + p.total, 0));
+// Les barres du graphique, de la plus ancienne a la plus recente : une par partie ou une par jour.
+function barres() {
+  if (groupe === "partie")
+    return comptees.map(p => ({
+      titre: fDate.format(p.date), date: p.date, toi: p.total, equipe: avecEquipe ? (p.equipe || 0) : 0,
+      note: nomMode(p.mode) + " · " + duree(p.minutes),
+    }));
+  const jours = new Map();
+  for (const p of comptees) {
+    const cle = p.date.toDateString();
+    const j = jours.get(cle) || { titre: fJourMoyen.format(p.date), date: p.date, toi: 0, equipe: 0, n: 0 };
+    j.toi += p.total; j.equipe += avecEquipe ? (p.equipe || 0) : 0; j.n++;
+    jours.set(cle, j);
   }
-  return moy;
-}
-
-const nfPc = [0, 1, 2, 3].map(d => new Intl.NumberFormat("fr-FR", { minimumFractionDigits: d, maximumFractionDigits: d }));
-function pourcentage(v) {
-  const p = v * 100;
-  return nfPc[p >= 10 ? 0 : p >= 1 ? 1 : p >= 0.1 ? 2 : 3].format(p) + " %";
-}
-const fJourLong = new Intl.DateTimeFormat("fr-FR", { weekday: "long", day: "numeric", month: "long" });
-const fHeure = new Intl.DateTimeFormat("fr-FR", { hour: "2-digit", minute: "2-digit" });
-const nfFois = new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 1 });
-
-function rendreChances() {
-  const c = DONNEES.chances;
-  const coffres = DONNEES.parties.filter(p => p.compte).reduce((s, p) => s + p.total, 0) + DONNEES.coffresAvant;
-  $("chances-sous-titre").textContent = "Avec tes " + nf.format(coffres) + " coffres : la chance d'avoir obtenu chaque trésor au moins une fois.";
-  tableau($("chances"), [["Trésor"], ["Par coffre", 1], ["Ta chance", 1, 1], ["Coffres pour 1 chance sur 2", 1]],
-    c.liste.map(x => [x.nom + (x.bonus > 1 ? " (×" + nfFois.format(x.bonus) + " en ce moment)" : ""), "1 sur " + nf.format(x.unSur), pourcentage(x.chance), nf.format(x.pour50)]));
-  if (c.heure) {
-    const bonus = c.heure.bonus.map(b => b.nom.toLowerCase() + " ×" + nfFois.format(b.fois)).join(", ");
-    const debut = new Date(c.heure.debut), fin = new Date(c.heure.fin);
-    $("heure-tresor").textContent = c.heure.enCours
-      ? "Heure au trésor en cours jusqu'à " + fHeure.format(fin) + " : " + bonus + "."
-      : "Prochaine heure au trésor : " + fJourLong.format(debut) + " de " + fHeure.format(debut) + " à " + fHeure.format(fin) + " (" + bonus + ")" + (c.heure.confirmee ? "." : ", horaire habituel pas encore confirmé.");
-  } else {
-    $("heure-tresor").textContent = "Aucune heure au trésor prévue.";
-  }
-
-  $("semaine").textContent = c.semaine
-    ? "Semaine " + c.semaine.numero + " de la chasse : " + c.semaine.titre + (c.semaine.lots.length ? " · à gagner : " + c.semaine.lots.map(l => l.nom).join(", ") : "") + "."
-    : "La chasse au trésor de la saison est terminée.";
-  const liste = document.createElement("ul");
-  liste.className = "liste-lots";
-  for (const lot of DONNEES.collection) {
-    const li = document.createElement("li");
-    const nom = document.createElement("b"); nom.textContent = lot.nom;
-    const detail = document.createElement("span"); detail.textContent = lot.type + " · " + fJour.format(new Date(lot.date));
-    li.append(nom, detail);
-    liste.appendChild(li);
-  }
-  const boite = $("collection");
-  boite.replaceChildren();
-  if (DONNEES.collection.length) boite.appendChild(liste);
-  const recus = document.createElement("p");
-  recus.className = "note-carte";
-  recus.textContent = (DONNEES.collection.length ? "" : "Aucun lot lu en entier pour l'instant. ") +
-    "Ton escouade a reçu un trésor dans " + pluriel(DONNEES.partiesTresor, "partie", "parties") +
-    " : le replay ne dit pas toujours lequel, seuls ceux remis par un coffre doré apparaissent ci-dessus.";
-  boite.appendChild(recus);
-  $("autres").textContent = DONNEES.autres.length
-    ? "Vu chez les autres joueurs de tes parties : " + DONNEES.autres.map(a => a.nom + (a.nombre > 1 ? " ×" + a.nombre : "")).join(", ") + "."
-    : "";
+  return [...jours.values()].map(j => ({ ...j, note: pluriel(j.n, "partie", "parties") }));
 }
 
 const SVG = "http://www.w3.org/2000/svg";
@@ -387,74 +612,93 @@ function el(nom, attrs, parent) {
   if (parent) parent.appendChild(e);
   return e;
 }
-
 function pasGraduation(max) {
-  for (const p of [1, 2, 5, 10, 20, 25, 50, 100]) if (max / p <= 5) return p;
-  return 200;
+  for (const p of [1, 2, 5, 10, 20, 25, 50, 100, 200, 250, 500, 1000, 2000, 2500, 5000]) if (max / p <= 4) return p;
+  return 10000;
+}
+// Barre aux coins du haut arrondis (r = 0 : carree).
+function cheminBarre(x, haut, larg, bas, r) {
+  if (bas - haut <= 0) return "";
+  r = Math.min(r, larg / 2, bas - haut);
+  return `M${x} ${bas}V${haut + r}Q${x} ${haut} ${x + r} ${haut}H${x + larg - r}Q${x + larg} ${haut} ${x + larg} ${haut + r}V${bas}Z`;
 }
 
-function rendreGraphique(l, moy) {
+function rendreGraphique() {
   const boite = $("graphique"), bulle = $("infobulle");
   boite.querySelector("svg")?.remove();
   boite.querySelector(".vide")?.remove();
   bulle.style.display = "none";
-  if (!l.length) {
+  $("legende").replaceChildren();
+  if (avecEquipe) {
+    for (const [nom, couleur] of [["Toi", "var(--jaune)"], ["Coéquipiers", "var(--bleu)"]]) {
+      const s = document.createElement("span"), i = document.createElement("i");
+      i.style.background = couleur;
+      s.append(i, nom);
+      $("legende").appendChild(s);
+    }
+  }
+  const toutes = barres();
+  if (!toutes.length) {
     const v = document.createElement("div");
-    v.className = "vide"; v.textContent = "Aucune partie sur cette sélection.";
+    v.className = "vide";
+    v.textContent = "Aucune partie comptée pour l'instant.";
     boite.appendChild(v);
-    $("graph-sous-titre").textContent = "";
+    $("graph-sous").textContent = "Chaque partie comptée apparaît ici.";
     return;
   }
-  const L = Math.max(boite.clientWidth, 280), H = 240, g = 28, d = 4, h = 18, b = 24;
-  const maxBarres = Math.floor((L - g - d) / 4);
-  const vue = l.slice(-maxBarres);
-  $("graph-sous-titre").textContent =
-    (vue.length < l.length ? "Les " + nf.format(vue.length) + " dernières parties. " : "Chaque barre est une partie. ") +
-    "La ligne marque ta moyenne (" + nf1.format(moy) + ").";
+  const L = Math.max(boite.clientWidth, 280), H = 250, g = 34, d = 4, h = 14, b = 26;
+  const vue = toutes.slice(-Math.floor((L - g - d) / 3));
+  const moyenne = somme(vue, x => x.toi + x.equipe) / vue.length;
+  const unite = groupe === "partie" ? "par partie" : "par jour";
+  $("graph-sous").textContent = (vue.length < toutes.length
+    ? (groupe === "partie" ? "Les " + nf.format(vue.length) + " dernières parties" : "Les " + nf.format(vue.length) + " derniers jours")
+    : "De la plus ancienne à la plus récente") + ". La ligne marque ta moyenne de " + nf1.format(moyenne) + " " + unite + ".";
 
-  const svg = el("svg", { viewBox: `0 0 ${L} ${H}`, role: "group", "aria-label": "Coffres par partie" });
+  const svg = el("svg", { viewBox: `0 0 ${L} ${H}`, role: "group", "aria-label": "Coffres " + unite });
   boite.insertBefore(svg, bulle);
-  const max = Math.max(5, ...vue.map(p => p.total));
+  const max = Math.max(5, ...vue.map(x => x.toi + x.equipe));
   const pas = pasGraduation(max);
   const haut = Math.ceil(max / pas) * pas;
   const y = v => h + (H - h - b) * (1 - v / haut);
   for (let v = 0; v <= haut; v += pas) {
-    el("line", { x1: g, x2: L - d, y1: y(v), y2: y(v), stroke: v === 0 ? "var(--axis)" : "var(--grid)", "stroke-width": 1 }, svg);
-    const t = el("text", { x: g - 6, y: y(v) + 4, "text-anchor": "end" }, svg);
-    t.textContent = nf.format(v);
+    el("line", { x1: g, x2: L - d, y1: y(v), y2: y(v), stroke: v === 0 ? "#4a4d55" : "#34363c", "stroke-width": 1 }, svg);
+    el("text", { x: g - 8, y: y(v) + 4, "text-anchor": "end" }, svg).textContent = nf.format(v);
   }
   const slot = (L - g - d) / vue.length;
-  const larg = Math.min(24, Math.max(2, slot - 2));
+  const larg = Math.max(1.5, Math.min(30, slot * 0.72));
   let dernierJour = "", dernierX = -999;
-  const record = vue.reduce((r, p) => (p.total > r.total ? p : r), vue[0]);
+  const base = y(0);
 
-  vue.forEach((p, i) => {
-    const cx = g + slot * i + slot / 2, x = cx - larg / 2;
+  vue.forEach((x, i) => {
+    const cx = g + slot * i + slot / 2, gauche = cx - larg / 2;
+    const groupeBarre = el("g", { class: "b" }, svg);
+    const yToi = y(x.toi), yTout = y(x.toi + x.equipe), r = larg >= 6 ? 3 : 0;
+    el("path", { class: "seg", fill: "var(--jaune)", d: cheminBarre(gauche, yToi, larg, base, x.equipe > 0 ? 0 : r) }, groupeBarre);
+    if (x.equipe > 0) el("path", { class: "seg", fill: "var(--bleu)", d: cheminBarre(gauche, yTout, larg, yToi, r) }, groupeBarre);
     const zone = el("rect", {
       class: "zone", x: g + slot * i, y: h, width: slot, height: H - h - b, tabindex: 0, role: "img",
-      "aria-label": fDate.format(p.date) + " : " + pluriel(p.total, "coffre", "coffres"),
-    }, svg);
-    const yb = y(p.total), base = y(0), r = Math.min(4, larg / 2);
-    // Toujours un element apres la zone, pour que le survol puisse le colorer.
-    el("path", {
-      class: "barre", "pointer-events": "none",
-      d: p.total > 0 ? `M${x} ${base}V${yb + r}Q${x} ${yb} ${x + r} ${yb}H${x + larg - r}Q${x + larg} ${yb} ${x + larg} ${yb + r}V${base}Z` : "",
-    }, svg);
+      "aria-label": x.titre + " : " + pluriel(x.toi + x.equipe, "coffre", "coffres"),
+    }, groupeBarre);
     const montrer = () => {
       bulle.replaceChildren();
-      const fort = document.createElement("b");
-      fort.textContent = pluriel(p.total, "coffre", "coffres");
-      const a = document.createElement("span");
-      a.textContent = pluriel(p.ouverts, "ouvert", "ouverts") + " · " + nf.format(p.aPied) + " à pied · " + nf.format(p.voiture) + " en voiture";
-      const c = document.createElement("span");
-      c.textContent = fDate.format(p.date) + " · " + nomMode(p.mode);
-      bulle.append(fort, a, c);
+      const titre = document.createElement("b");
+      titre.textContent = x.titre;
+      bulle.appendChild(titre);
+      const ligne = (texte, valeur) => {
+        const s = document.createElement("span"), v = document.createElement("span");
+        v.className = "val"; v.style.display = "inline"; v.textContent = nf.format(valeur);
+        s.append(texte + " : ", v);
+        bulle.appendChild(s);
+      };
+      if (avecEquipe) { ligne("Toi", x.toi); ligne("Coéquipiers", x.equipe); }
+      ligne(avecEquipe ? "Total" : "Coffres", x.toi + x.equipe);
+      const note = document.createElement("span");
+      note.textContent = x.note;
+      bulle.appendChild(note);
       bulle.style.display = "block";
-      const bw = bulle.offsetWidth, echelle = boite.clientWidth / L;
-      let gauche = cx * echelle - bw / 2;
-      gauche = Math.max(0, Math.min(gauche, boite.clientWidth - bw));
-      const dessus = yb * echelle - bulle.offsetHeight - 8;
-      bulle.style.transform = `translate(${gauche}px, ${Math.max(0, dessus)}px)`;
+      const echelle = boite.clientWidth / L, bw = bulle.offsetWidth;
+      const gaucheBulle = Math.max(0, Math.min(cx * echelle - bw / 2, boite.clientWidth - bw));
+      bulle.style.transform = `translate(${gaucheBulle}px, ${Math.max(0, yTout * echelle - bulle.offsetHeight - 10)}px)`;
     };
     const cacher = () => { bulle.style.display = "none"; };
     zone.addEventListener("pointerenter", montrer);
@@ -462,29 +706,24 @@ function rendreGraphique(l, moy) {
     zone.addEventListener("focus", montrer);
     zone.addEventListener("blur", cacher);
 
-    const jour = p.date.toDateString();
-    if (jour !== dernierJour && cx - dernierX >= 46) {
-      const t = el("text", { x: cx, y: H - 6, "text-anchor": i === 0 && slot < 40 ? "start" : "middle" }, svg);
-      t.textContent = fJour.format(p.date);
+    const jour = x.date.toDateString();
+    if (jour !== dernierJour && cx - dernierX >= 54) {
+      el("text", { x: cx, y: H - 7, "text-anchor": i === 0 && slot < 40 ? "start" : "middle" }, svg).textContent = fCourt.format(x.date);
       dernierX = cx;
     }
     dernierJour = jour;
-    if (p === record && p.total > 0) {
-      const t = el("text", { class: "valeur-record", x: cx, y: yb - 5, "text-anchor": "middle" }, svg);
-      t.textContent = nf.format(p.total);
-    }
   });
-  el("line", { x1: g, x2: L - d, y1: y(moy), y2: y(moy), stroke: "var(--ink-2)", "stroke-width": 1.5, "pointer-events": "none" }, svg);
+  el("line", { x1: g, x2: L - d, y1: y(moyenne), y2: y(moyenne), stroke: "#d7d8dc", "stroke-width": 1.2, "stroke-opacity": 0.75, "pointer-events": "none" }, svg);
 }
 
 function tableau(table, entetes, lignes) {
   table.replaceChildren();
-  const thead = table.createTHead().insertRow();
+  const tete = table.createTHead().insertRow();
   for (const [texte, nb] of entetes) {
     const th = document.createElement("th");
     th.textContent = texte;
     if (nb) th.className = "nb";
-    thead.appendChild(th);
+    tete.appendChild(th);
   }
   const corps = table.createTBody();
   for (const ligne of lignes) {
@@ -498,11 +737,29 @@ function tableau(table, entetes, lignes) {
   }
 }
 
-function rendreTableaux(l) {
+// Toutes les parties, y compris celles qui ne comptent pas (grisees, avec la raison au survol).
+function rendreParties() {
+  const inverse = [...parties].reverse();
+  const visibles = toutAfficher ? inverse : inverse.slice(0, 20);
+  tableau($("parties"), [["Fin"], ["Mode"], ["Durée", 1], ["Classement", 1], ["Ouverts", 1], ["Cassés", 1], ["Coéquipiers", 1], ["Trésor"], ["Total", 1, 1]],
+    visibles.map(p => [fDate.format(p.date), nomMode(p.mode), duree(p.minutes), p.classement ? "Top " + p.classement : "–",
+      nf.format(p.ouverts), nf.format(p.casses), p.equipe ? nf.format(p.equipe) : "–",
+      p.lots.length ? p.lots.join(", ") : p.tresor ? "sans nom" : "", p.compte ? nf.format(compte(p)) : "non comptée"]));
+  [...$("parties").tBodies[0].rows].forEach((tr, i) => {
+    if (visibles[i].compte) return;
+    tr.classList.add("non-compte");
+    tr.title = "Pas comptée : " + visibles[i].raison;
+  });
+  if (!inverse.length) tableau($("parties"), [["Aucune partie pour l'instant"]], []);
+  $("plus").hidden = inverse.length <= 20;
+  $("plus").textContent = toutAfficher ? "Afficher moins" : "Tout afficher (" + nf.format(inverse.length) + ")";
+}
+
+function rendreDetails() {
   const modes = new Map();
-  for (const p of l) {
+  for (const p of comptees) {
     const m = modes.get(p.mode) || { n: 0, s: 0 };
-    m.n++; m.s += p.total;
+    m.n++; m.s += compte(p);
     modes.set(p.mode, m);
   }
   tableau($("par-mode"), [["Mode"], ["Parties", 1], ["Coffres", 1], ["Moyenne", 1, 1]],
@@ -510,60 +767,301 @@ function rendreTableaux(l) {
 
   const types = new Map();
   let aPied = 0, voiture = 0, tot = 0;
-  for (const p of l) {
+  for (const p of comptees) {
     for (const [k, v] of Object.entries(p.types)) { types.set(k, (types.get(k) || 0) + v); tot += v; }
     aPied += p.aPied; voiture += p.voiture; tot += p.casses;
   }
-  const lignesTypes = [...types].sort((a, b) => b[1] - a[1]);
-  if (aPied) lignesTypes.push(["Cassés à pied", aPied]);
-  if (voiture) lignesTypes.push(["Cassés en voiture", voiture]);
+  const lignes = [...types].sort((a, b) => b[1] - a[1]);
+  if (aPied) lignes.push(["Cassés à pied", aPied]);
+  if (voiture) lignes.push(["Cassés en voiture", voiture]);
   tableau($("par-type"), [["Type"], ["Coffres", 1, 1], ["Part", 1]],
-    lignesTypes.map(([k, v]) => [k, nf.format(v), Math.round(v / tot * 100) + " %"]));
+    lignes.map(([k, v]) => [k, nf.format(v), Math.round(v / tot * 100) + " %"]));
+}
 
-  // Toutes les parties, y compris celles qui ne comptent pas (grisées, avec la raison au survol).
-  const inverse = [...filtrees(true)].reverse();
-  const visibles = toutAfficher ? inverse : inverse.slice(0, 15);
-  tableau($("parties"), [["Fin"], ["Mode"], ["Durée", 1], ["Classement", 1], ["Ouverts", 1], ["À pied", 1], ["Voiture", 1], ["Trésor"], ["Total", 1, 1]],
-    visibles.map(p => [fDate.format(p.date), nomMode(p.mode), nf.format(Math.round(p.minutes)) + " min",
-      p.classement ? "Top " + p.classement : "–", nf.format(p.ouverts), nf.format(p.aPied), nf.format(p.voiture),
-      p.lots.length ? p.lots.join(", ") : p.tresor ? "reçu" : "", p.compte ? nf.format(p.total) : "non compté"]));
-  [...$("parties").tBodies[0].rows].forEach((tr, i) => {
-    if (visibles[i].compte) return;
-    tr.classList.add("non-compte");
-    tr.title = "Pas comptée : " + visibles[i].raison;
+function rendreChances() {
+  const c = D.chances;
+  const coffres = somme(comptees, p => p.total + (avecEquipe ? (p.equipe || 0) : 0)) + D.coffresAvant;
+  $("chances-sous").textContent = "Avec " + (avecEquipe ? "les " : "tes ") + pluriel(coffres, "coffre", "coffres") + (avecEquipe ? " de l'escouade" : "") +
+    " : la chance d'avoir obtenu chaque trésor au moins une fois.";
+  tableau($("chances"), [["Trésor"], ["Par coffre", 1], ["Ta chance", 1, 1], ["Pour 1 chance sur 2", 1]],
+    c.liste.map(x => [x.nom + (x.bonus > 1 ? " (×" + nfFois.format(x.bonus) + " en ce moment)" : ""), "1 sur " + nf.format(x.unSur),
+      x.type === "pirate-shop" && D.boutique.obtenue ? "obtenu ✓" : pourcentage(avecEquipe ? x.chanceEquipe : x.chance), nf.format(x.pour50)]));
+  if (c.heure) {
+    const bonus = c.heure.bonus.map(b => b.nom.toLowerCase() + " ×" + nfFois.format(b.fois)).join(", ");
+    const debut = new Date(c.heure.debut), fin = new Date(c.heure.fin);
+    $("heure-tresor").textContent = c.heure.enCours
+      ? "Heure au trésor en cours jusqu'à " + fHeure.format(fin) + " : " + bonus + "."
+      : "Prochaine heure au trésor : " + fJourLong.format(debut) + " de " + fHeure.format(debut) + " à " + fHeure.format(fin) + " (" + bonus + ")" + (c.heure.confirmee ? "." : ", horaire habituel pas encore confirmé.");
+  } else {
+    $("heure-tresor").textContent = "Aucune heure au trésor prévue.";
+  }
+
+  $("semaine").textContent = c.semaine
+    ? "Semaine " + c.semaine.numero + " de la chasse : " + c.semaine.titre + (c.semaine.lots.length ? " · à gagner : " + c.semaine.lots.map(l => l.nom).join(", ") : "") + "."
+    : "La chasse au trésor de la saison est terminée.";
+  // Ta collection : l'acces a la boutique (si tu l'as indique), les lots des coffres dores avec leur nom,
+  // puis les tresors dont le replay ne donne pas le nom, regroupes par jour.
+  const boite = $("collection");
+  boite.replaceChildren();
+  const lignes = [];
+  if (D.boutique.obtenue) lignes.push(["Accès à la boutique pirate ✓", "indiqué par toi · " + fCourt.format(new Date(D.boutique.obtenue))]);
+  for (const lot of D.collection) lignes.push([lot.nom, lot.type + " · coffre doré · " + fCourt.format(new Date(lot.date))]);
+  const sansNom = parties.filter(p => p.tresor && !p.lots.length);
+  if (sansNom.length) {
+    const jours = new Map();
+    for (const p of sansNom) { const j = fCourt.format(p.date); jours.set(j, (jours.get(j) || 0) + 1); }
+    lignes.push([sansNom.length > 1 ? sansNom.length + " trésors sans nom" : "1 trésor sans nom",
+      [...jours].map(([j, n]) => n > 1 ? j + " (×" + n + ")" : j).join(", ")]);
+  }
+  if (lignes.length) {
+    const liste = document.createElement("ul");
+    liste.className = "liste-lots";
+    for (const [texte, detailTexte] of lignes) {
+      const li = document.createElement("li");
+      const nom = document.createElement("b"); nom.textContent = texte;
+      const detail = document.createElement("span"); detail.textContent = detailTexte;
+      li.append(nom, detail);
+      liste.appendChild(li);
+    }
+    boite.appendChild(liste);
+  }
+  const note = document.createElement("p");
+  note.className = "note-carte";
+  note.textContent = !lignes.length
+    ? "Aucun trésor pour l'instant. Ceux que tu obtiens apparaîtront ici après la partie."
+    : sansNom.length
+      ? "Un trésor sans nom, c'est un trésor remis à toi ou à ton escouade dont le replay ne donne pas le nom : seuls les coffres dorés le disent." +
+        (D.boutique.obtenue ? "" : " Si l'un d'eux était l'accès à la boutique, coche-le dans les réglages (roue dentée).")
+      : "";
+  if (note.textContent) boite.appendChild(note);
+  $("autres").textContent = D.autres.length
+    ? "Vu chez les autres joueurs de tes parties : " + D.autres.map(a => a.nom + (a.nombre > 1 ? " ×" + a.nombre : "")).join(", ") + "."
+    : "";
+}
+
+function rendreVue() {
+  for (const b of document.querySelectorAll("[data-vue]")) b.setAttribute("aria-pressed", String(b.dataset.vue === vue));
+  for (const b of document.querySelectorAll("[data-groupe]")) b.setAttribute("aria-pressed", String(b.dataset.groupe === groupe));
+  $("vue-graph").hidden = vue !== "graph";
+  $("vue-table").hidden = vue !== "table";
+  if (vue === "graph") rendreGraphique(); else rendreParties();
+  if (vue === "table") $("graph-sous").textContent = "De la plus récente à la plus ancienne. Les parties grisées ne comptent pas : passe la souris dessus pour savoir pourquoi.";
+}
+
+function tout() {
+  rendreHaut();
+  rendreTuiles();
+  rendreVue();
+  rendreDetails();
+  rendreChances();
+}
+
+// --- Commandes ---
+function choisirEquipe(oui) {
+  avecEquipe = oui;
+  pref.ecrire("equipe", oui ? "1" : "0");
+  tout();
+}
+$("b-toi").addEventListener("click", () => choisirEquipe(false));
+$("b-equipe").addEventListener("click", () => choisirEquipe(true));
+for (const b of document.querySelectorAll("[data-vue]"))
+  b.addEventListener("click", () => { vue = b.dataset.vue; pref.ecrire("vue", vue); rendreVue(); });
+for (const b of document.querySelectorAll("[data-groupe]"))
+  b.addEventListener("click", () => { groupe = b.dataset.groupe; pref.ecrire("groupe", groupe); rendreGraphique(); });
+$("plus").addEventListener("click", () => { toutAfficher = !toutAfficher; rendreParties(); });
+
+let minuteurToast;
+function toast(texte, erreur) {
+  const t = $("toast");
+  t.textContent = texte;
+  t.classList.toggle("erreur-toast", !!erreur);
+  t.classList.add("visible");
+  clearTimeout(minuteurToast);
+  minuteurToast = setTimeout(() => t.classList.remove("visible"), 6000);
+}
+
+async function envoyer(chemin, corps, type) {
+  const reponse = await fetch(chemin, { method: "POST", headers: { "X-Compteur": "1", "Content-Type": type || "application/octet-stream" }, body: corps });
+  let json = {};
+  try { json = await reponse.json(); } catch { /* reponse vide */ }
+  if (!reponse.ok) throw new Error(json.erreur || "Le compteur a refusé (" + reponse.status + ").");
+  return json;
+}
+
+// Statut du compteur et rechargement de la page quand il y a du nouveau.
+let envoiEnCours = false, rechargeEnAttente = false;
+function statut(texte, voyant) {
+  $("statut-texte").textContent = texte;
+  $("voyant").className = "voyant " + (voyant || "");
+}
+function recharger() {
+  try { sessionStorage.setItem("compteur-defilement", String(window.scrollY)); } catch { /* facultatif */ }
+  location.reload();
+}
+async function verifierEtat() {
+  if (rechargeEnAttente && !envoiEnCours && !$("reglages").open) { recharger(); return; }
+  try {
+    const reponse = await fetch("/etat.json", { cache: "no-store" });
+    const etat = await reponse.json();
+    if (!envoiEnCours) statut(etat.statut, etat.voyant);
+    if (etat.version && etat.version !== D.version) {
+      if (envoiEnCours || $("reglages").open) rechargeEnAttente = true; else recharger();
+    }
+  } catch {
+    if (!envoiEnCours) statut("Le compteur n'est pas lancé : relance-le pour mettre à jour cette page.", "rouge");
+  }
+}
+
+// Replays deposes ou choisis : envoyes un par un au compteur, qui les lit comme les autres.
+async function ajouterReplays(fichiers) {
+  const replays = fichiers.filter(f => /\.replay$/i.test(f.name));
+  if (!replays.length) { toast("Aucun replay (fichier .replay) là-dedans.", true); return; }
+  if (envoiEnCours) return;
+  envoiEnCours = true;
+  let ajoutes = 0, deja = 0, erreurs = 0, derniereErreur = "";
+  try {
+    for (let i = 0; i < replays.length; i++) {
+      statut("Envoi des replays au compteur : " + nf.format(i + 1) + " / " + nf.format(replays.length) + "…", "orange");
+      const f = replays[i];
+      try {
+        const r = await envoyer("/ajouter?nom=" + encodeURIComponent(f.name) + "&date=" + Math.round(f.lastModified || 0), f);
+        if (r.etat === "ajoute") ajoutes++; else deja++;
+      } catch (e) { erreurs++; derniereErreur = e.message; }
+    }
+  } finally {
+    envoiEnCours = false;
+  }
+  const morceaux = [];
+  if (ajoutes) morceaux.push(pluriel(ajoutes, "replay ajouté", "replays ajoutés") + " : lecture en cours");
+  if (deja) morceaux.push(pluriel(deja, "déjà compté", "déjà comptés"));
+  if (erreurs) morceaux.push(pluriel(erreurs, "erreur", "erreurs") + " (" + derniereErreur + ")");
+  toast(morceaux.join(" · "), erreurs > 0 && !ajoutes);
+  verifierEtat();
+}
+
+async function fichiersDeposes(transfert) {
+  const entrees = [...(transfert.items || [])].map(i => i.webkitGetAsEntry ? i.webkitGetAsEntry() : null).filter(Boolean);
+  if (!entrees.length) return [...transfert.files];
+  const fichiers = [];
+  async function parcourir(entree) {
+    if (entree.isFile) {
+      if (/\.replay$/i.test(entree.name)) fichiers.push(await new Promise((ok, ko) => entree.file(ok, ko)));
+    } else if (entree.isDirectory) {
+      const lecteur = entree.createReader();
+      for (;;) {
+        const lot = await new Promise((ok, ko) => lecteur.readEntries(ok, ko));
+        if (!lot.length) break;
+        for (const e of lot) await parcourir(e);
+      }
+    }
+  }
+  for (const e of entrees) await parcourir(e);
+  return fichiers;
+}
+
+function brancherActions() {
+  const depot = $("depot");
+  for (const evenement of ["dragenter", "dragover"])
+    depot.addEventListener(evenement, e => { e.preventDefault(); depot.classList.add("survol"); });
+  depot.addEventListener("dragleave", e => { if (!depot.contains(e.relatedTarget)) depot.classList.remove("survol"); });
+  depot.addEventListener("drop", async e => {
+    e.preventDefault();
+    depot.classList.remove("survol");
+    try { ajouterReplays(await fichiersDeposes(e.dataTransfer)); } catch { toast("Ces fichiers n'ont pas pu être lus.", true); }
   });
-  const bouton = $("plus");
-  bouton.style.display = inverse.length > 15 ? "" : "none";
-  bouton.textContent = toutAfficher ? "Afficher moins" : "Tout afficher (" + nf.format(inverse.length) + ")";
+  // Un fichier lache a cote de la zone ne doit pas ouvrir le replay dans le navigateur.
+  window.addEventListener("dragover", e => e.preventDefault());
+  window.addEventListener("drop", e => e.preventDefault());
+  $("b-fichiers").addEventListener("click", () => $("f-fichiers").click());
+  $("b-dossier").addEventListener("click", () => $("f-dossier").click());
+  for (const id of ["f-fichiers", "f-dossier"])
+    $(id).addEventListener("change", e => { ajouterReplays([...e.target.files]); e.target.value = ""; });
+
+  $("b-importer").addEventListener("click", () => $("f-import").click());
+  $("f-import").addEventListener("change", async e => {
+    const fichier = e.target.files[0];
+    e.target.value = "";
+    if (!fichier) return;
+    try {
+      const r = await envoyer("/importer", await fichier.text(), "application/json");
+      toast(r.ajoutees
+        ? pluriel(r.ajoutees, "partie ajoutée", "parties ajoutées") + (r.ignorees ? " · " + pluriel(r.ignorees, "déjà là", "déjà là") : "")
+        : "Rien de nouveau : ces parties sont déjà là.");
+      verifierEtat();
+    } catch (err) { toast(err.message, true); }
+  });
+
+  // Reglages
+  const dialogue = $("reglages");
+  const nombre = (texte, min) => {
+    const t = texte.replace(/[\s  .,']/g, "");
+    if (t === "") return undefined;
+    const n = Number(t);
+    return Number.isInteger(n) && n >= min ? n : null;
+  };
+  $("r-cote-epic").textContent = nf.format(D.boutique.unSurEpic);
+  $("b-reglages").addEventListener("click", () => {
+    $("r-cote").value = String(D.boutique.unSur);
+    $("r-avant").value = String(D.coffresAvant);
+    $("r-quete").value = "";
+    $("r-quete-aide").textContent = (D.calage && D.quete != null ? "Le compteur l'estime à " + nf.format(D.quete) + ". " : "") +
+      "Le total repart de la valeur que tu indiques. Laisse vide pour ne rien changer.";
+    $("r-relire").checked = false;
+    $("r-boutique").checked = !!D.boutique.obtenue;
+    $("r-erreur").textContent = "";
+    for (const id of ["r-cote", "r-avant", "r-quete"]) $(id).removeAttribute("aria-invalid");
+    dialogue.showModal();
+  });
+  $("r-cote-remettre").addEventListener("click", () => { $("r-cote").value = String(D.boutique.unSurEpic); });
+  $("r-annuler").addEventListener("click", () => dialogue.close());
+  $("form-reglages").addEventListener("submit", async e => {
+    e.preventDefault();
+    const cote = nombre($("r-cote").value, 1), avant = nombre($("r-avant").value, 0), quete = nombre($("r-quete").value, 0);
+    const invalides = [["r-cote", cote === null || cote === undefined], ["r-avant", avant === null], ["r-quete", quete === null]];
+    for (const [id, faux] of invalides) $(id).setAttribute("aria-invalid", String(faux));
+    if (invalides.some(([, faux]) => faux)) { $("r-erreur").textContent = "Écris des nombres entiers, sans lettres."; return; }
+    const corps = { coteBoutique: cote, coffresAvant: avant ?? 0, relire: $("r-relire").checked, boutiqueObtenue: $("r-boutique").checked };
+    if (quete !== undefined) corps.quete = quete;
+    $("r-enregistrer").disabled = true;
+    try {
+      await envoyer("/reglages", JSON.stringify(corps), "application/json");
+      dialogue.close();
+      toast(corps.relire ? "Enregistré : le compteur relit tes replays, ça prend quelques minutes." : "Réglages enregistrés.");
+      setTimeout(verifierEtat, 400);
+    } catch (err) {
+      $("r-erreur").textContent = err.message;
+    } finally {
+      $("r-enregistrer").disabled = false;
+    }
+  });
 }
 
-function rendre() {
-  const l = filtrees();
-  const moy = rendreTuiles(l);
-  rendreGraphique(l, moy);
-  rendreTableaux(l);
+tout();
+if (ACTIONS) {
+  brancherActions();
+  verifierEtat();
+  setInterval(verifierEtat, 3000);
+} else {
+  // Page ouverte comme fichier : pas de compteur pour recevoir des replays ni enregistrer les reglages.
+  $("depot-boutons").hidden = true;
+  $("pied-actions").hidden = true;
+  $("b-reglages").hidden = true;
+  $("depot-note").textContent = "Ouvre le tableau depuis l'icône du compteur, près de l'horloge, pour ajouter des replays.";
+  statut("Mis à jour le " + fDate.format(new Date(D.genereLe)), "vert");
+  setTimeout(recharger, 60000);
 }
-
-$("plus").addEventListener("click", () => {
-  toutAfficher = !toutAfficher;
-  ecrire("tout", toutAfficher ? "1" : "0");
-  rendreTableaux(filtrees());
-});
-
-remplirEntete();
-remplirFiltres();
-rendre();
-rendreChances();
 
 let largeur = $("graphique").clientWidth;
 new ResizeObserver(() => {
   const w = $("graphique").clientWidth;
-  if (w !== largeur) { largeur = w; rendreGraphique(filtrees(), rendreTuiles(filtrees())); }
+  if (w !== largeur && vue === "graph") { largeur = w; rendreGraphique(); }
 }).observe($("graphique"));
 
-// La page se recharge seule pour afficher les nouvelles parties, sans perdre la position.
-try { const y = Number(sessionStorage.getItem("defilement")); if (y) window.scrollTo(0, y); } catch { /* facultatif */ }
-setTimeout(() => { ecrire("defilement", String(window.scrollY)); location.reload(); }, 60000);
+try {
+  const y = Number(sessionStorage.getItem("compteur-defilement"));
+  sessionStorage.removeItem("compteur-defilement");
+  if (y) window.scrollTo(0, y);
+} catch { /* facultatif */ }
 </script>
 </body>
 </html>

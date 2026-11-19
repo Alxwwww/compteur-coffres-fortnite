@@ -16,28 +16,48 @@ internal sealed class Moteur
     private static readonly TimeSpan DelaiNouvelEssai = TimeSpan.FromMinutes(10);
 
     private readonly DirectoryInfo _replays;
+    private readonly SemaphoreSlim _reveil = new(0);
     private volatile StatutMoteur _statut = new(EtatMoteur.Demarrage, "Démarrage…");
 
     public Moteur(string dossierReplays, Stockage stockage)
     {
         _replays = new DirectoryInfo(dossierReplays);
         Stockage = stockage;
+        DossierAjoutes = Path.Combine(stockage.Dossier, "Replays ajoutés");
     }
 
     public Stockage Stockage { get; }
     public StatutMoteur Statut => _statut;
 
+    /// <summary>Une partie vient d'etre comptee (appele depuis le fil du lecteur).</summary>
+    public event Action<Partie>? PartieAjoutee;
+
+    /// <summary>Replays deposes dans le tableau (venus d'un autre PC ou d'une sauvegarde) : lus comme ceux de Fortnite.</summary>
+    public string DossierAjoutes { get; }
+
+    /// <summary>Lance le prochain scan tout de suite, sans attendre l'intervalle habituel.</summary>
+    public void Reveiller()
+    {
+        lock (_reveil) if (_reveil.CurrentCount == 0) _reveil.Release();
+    }
+
+    /// <summary>Attend l'intervalle, ou moins si quelqu'un appelle <see cref="Reveiller"/>.</summary>
+    public Task AttendreAsync(TimeSpan intervalle, CancellationToken annulation) => _reveil.WaitAsync(intervalle, annulation);
+
     /// <summary>Renvoie le nombre de nouvelles parties comptees.</summary>
     public int Scanner(CancellationToken annulation = default)
     {
         _replays.Refresh();
-        if (!_replays.Exists)
+        var demos = _replays.Exists ? _replays.GetFiles("*.replay") : Array.Empty<FileInfo>();
+        var ajoutes = Directory.Exists(DossierAjoutes) ? new DirectoryInfo(DossierAjoutes).GetFiles("*.replay") : Array.Empty<FileInfo>();
+        if (demos.Length == 0 && ajoutes.Length == 0)
         {
             _statut = new(EtatMoteur.PasDeReplays, "Aucun replay : active-les dans les réglages de Fortnite");
             return 0;
         }
         var maintenant = DateTime.Now;
-        var tous = _replays.GetFiles("*.replay");
+        var nomsDemos = demos.Select(f => f.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var tous = demos.Concat(ajoutes.Where(f => !nomsDemos.Contains(f.Name))).ToArray();
         List<FileInfo> fichiers;
         lock (Stockage.Verrou)
         {
@@ -67,6 +87,7 @@ internal sealed class Moteur
                     nouvelles++;
                     aSauver = true;
                     if (nouvelles % 10 == 0) Enregistrer();
+                    try { PartieAjoutee?.Invoke(partie); } catch (Exception) { /* une notification ne doit pas bloquer le comptage */ }
                     break;
                 case IssueLecture.Bloquee:
                     // La bibliotheque tourne en boucle sur ce replay : on garde ce qui a ete lu avant, et on passe a la suite.
@@ -97,13 +118,11 @@ internal sealed class Moteur
 
         // Rouge seulement si la derniere partie jouee est illisible : un seul replay rate ne veut pas dire que Fortnite a change.
         bool derniereIllisible;
-        var plusRecent = tous.OrderByDescending(f => f.LastWriteTime).FirstOrDefault();
+        var plusRecent = demos.OrderByDescending(f => f.LastWriteTime).FirstOrDefault();
         lock (Stockage.Verrou) derniereIllisible = plusRecent != null && Stockage.Donnees.Echecs.Any(e => e.Fichier == plusRecent.Name && e.Essais >= EssaisMax);
         _statut = derniereIllisible
             ? new(EtatMoteur.Erreurs, "Ta dernière partie est illisible : Fortnite a peut-être changé")
-            : tous.Length == 0
-                ? new(EtatMoteur.PasDeReplays, "Aucun replay : active-les dans les réglages de Fortnite")
-                : new(EtatMoteur.Attente, "Actif · en attente de ta prochaine partie");
+            : new(EtatMoteur.Attente, "Actif · en attente de ta prochaine partie");
         return nouvelles;
     }
 
@@ -173,13 +192,32 @@ internal sealed class ServeurLocal : IDisposable
     private static readonly int[] Ports = { 8766, 8767, 8768, 8769 };
     private readonly string _page;
     private readonly Func<string>? _etat;
+    private readonly ActionsTableau? _actions;
     private System.Net.HttpListener? _ecoute;
 
-    /// <param name="etat">Ce que montre la petite fenetre, en JSON : sert la version OBS (/overlay).</param>
-    public ServeurLocal(string page, Func<string>? etat = null)
+    /// <param name="etat">Ce que montre la petite fenetre, en JSON : sert la version OBS (/overlay) et le statut du tableau.</param>
+    /// <param name="actions">Ce que les boutons du tableau peuvent faire : ajouter des replays, importer, exporter, regler.</param>
+    public ServeurLocal(string page, Func<string>? etat = null, ActionsTableau? actions = null)
     {
         _page = page;
         _etat = etat;
+        _actions = actions;
+    }
+
+    // Seule la page du tableau peut agir : l'en-tete X-Compteur oblige un autre site a demander la permission
+    // au navigateur (CORS), que ce serveur ne donne jamais ; l'origine et l'hote doivent etre ce PC.
+    private bool Autorisee(System.Net.HttpListenerRequest requete)
+    {
+        if (requete.Headers["X-Compteur"] != "1" || Adresse == null) return false;
+        var origine = requete.Headers["Origin"];
+        return origine == null || origine.TrimEnd('/') == Adresse.TrimEnd('/');
+    }
+
+    private static void EcrireJson(System.Net.HttpListenerResponse reponse, int code, object contenu)
+    {
+        reponse.StatusCode = code;
+        reponse.ContentType = "application/json; charset=utf-8";
+        reponse.OutputStream.Write(System.Text.Json.JsonSerializer.SerializeToUtf8Bytes(contenu));
     }
 
     private static string? PageObs;
@@ -220,8 +258,43 @@ internal sealed class ServeurLocal : IDisposable
             catch (Exception) { return; }
             try
             {
-                var chemin = contexte.Request.Url?.AbsolutePath ?? "/";
+                var requete = contexte.Request;
+                var chemin = requete.Url?.AbsolutePath ?? "/";
                 contexte.Response.Headers["Cache-Control"] = "no-store";
+                if (requete.Url?.Host is not ("localhost" or "127.0.0.1"))
+                {
+                    contexte.Response.StatusCode = 403;
+                    continue;
+                }
+                if (requete.HttpMethod == "POST")
+                {
+                    if (_actions == null || !Autorisee(requete))
+                    {
+                        contexte.Response.StatusCode = 403;
+                        continue;
+                    }
+                    var (code, reponse) = chemin switch
+                    {
+                        "/ajouter" => _actions.AjouterReplay(requete),
+                        "/importer" => _actions.Importer(requete),
+                        "/reglages" => _actions.Reglages(requete),
+                        _ => (404, (object)new { erreur = "Adresse inconnue" }),
+                    };
+                    EcrireJson(contexte.Response, code, reponse);
+                    continue;
+                }
+                if (requete.HttpMethod != "GET")
+                {
+                    contexte.Response.StatusCode = 405;
+                    continue;
+                }
+                if (chemin == "/exporter" && _actions != null)
+                {
+                    contexte.Response.ContentType = "application/json; charset=utf-8";
+                    contexte.Response.Headers["Content-Disposition"] = $"attachment; filename=\"coffres-fortnite-{DateTime.Now:yyyy-MM-dd}.json\"";
+                    contexte.Response.OutputStream.Write(_actions.Exporter());
+                    continue;
+                }
                 if (chemin == "/etat.json" && _etat != null)
                 {
                     contexte.Response.ContentType = "application/json; charset=utf-8";
@@ -331,7 +404,7 @@ internal sealed class ApplicationIcone : ApplicationContext
     {
         _moteur = moteur;
         _image = Icones.Application();
-        _serveur = new ServeurLocal(Tableau.Chemin(moteur.Stockage), () => _etatJson);
+        _serveur = new ServeurLocal(Tableau.Chemin(moteur.Stockage), () => _etatJson, new ActionsTableau(moteur));
         _serveur.Demarrer();
         var reglages = moteur.Stockage.Donnees.Fenetre;
 
@@ -349,6 +422,20 @@ internal sealed class ApplicationIcone : ApplicationContext
         var escouade = new ToolStripMenuItem("Afficher le total d'escouade") { Checked = reglages.Escouade, CheckOnClick = true };
         escouade.CheckedChanged += (_, _) => { Regler(r => r.Escouade = escouade.Checked); Rafraichir(); };
         menu.Items.Add(escouade);
+        var boutique = new ToolStripMenuItem("J'ai eu l'accès à la boutique") { Checked = moteur.Stockage.Donnees.BoutiqueObtenue != null, CheckOnClick = true };
+        boutique.CheckedChanged += (_, _) =>
+        {
+            lock (_moteur.Stockage.Verrou)
+            {
+                _moteur.Stockage.Donnees.BoutiqueObtenue = boutique.Checked ? _moteur.Stockage.Donnees.BoutiqueObtenue ?? DateTimeOffset.Now : null;
+                _moteur.Stockage.Sauvegarder();
+                Tableau.Ecrire(_moteur.Stockage);
+            }
+            Rafraichir();
+        };
+        // Coche aussi depuis les reglages du tableau : le menu se remet a jour a chaque ouverture.
+        menu.Opening += (_, _) => { var obtenue = _moteur.Stockage.Donnees.BoutiqueObtenue != null; if (boutique.Checked != obtenue) boutique.Checked = obtenue; };
+        menu.Items.Add(boutique);
         menu.Items.Add("Ajouter mes coffres d'avant le compteur…", null, (_, _) => DemanderAvant());
         menu.Items.Add("Indiquer où en est ma quête…", null, (_, _) => DemanderQuete());
         if (_serveur.Adresse != null) menu.Items.Add("Copier l'adresse pour OBS", null, (_, _) => CopierObs());
@@ -374,6 +461,18 @@ internal sealed class ApplicationIcone : ApplicationContext
             _icone.ShowBalloonTip(8000, "Compteur de coffres lancé",
                 "Il lit tes replays Fortnite et compte tes coffres après chaque partie. Clic droit sur le coffre près de l'horloge pour les options.",
                 ToolTipIcon.Info);
+
+        // Un tresor dans une partie qui vient de finir : on le dit tout de suite (pas pendant la lecture des anciennes).
+        var ui = SynchronizationContext.Current ?? new WindowsFormsSynchronizationContext();
+        moteur.PartieAjoutee += partie =>
+        {
+            if (DateTimeOffset.Now - partie.Fin > TimeSpan.FromHours(3) || (partie.Tresors.Count == 0 && !partie.TresorRecu)) return;
+            var noms = partie.Tresors.Select(i => Tresors.Trouver(i)?.Nom ?? "un trésor de la chasse").ToList();
+            var (titre, texte) = noms.Count > 0
+                ? ("Trésor obtenu !", $"{string.Join(", ", noms)}, trouvé dans un coffre doré pendant ta dernière partie.")
+                : ("Trésor reçu !", "Un trésor a été remis à ton escouade pendant ta dernière partie. Le replay ne dit pas lequel : si c'est l'accès à la boutique, coche « J'ai eu l'accès à la boutique » dans ce menu.");
+            ui.Post(_ => _icone.ShowBalloonTip(15000, titre, texte, ToolTipIcon.Info), null);
+        };
 
         _rafraichissement = new System.Windows.Forms.Timer { Interval = 1000 };
         _rafraichissement.Tick += (_, _) => Rafraichir();
@@ -414,8 +513,11 @@ internal sealed class ApplicationIcone : ApplicationContext
             equipe = resume.TotalEquipe,
             derniereEquipe = resume.DerniereEquipe,
             boutique = FenetreCompteur.Pourcentage(resume.ChanceBoutique),
+            boutiqueObtenue = resume.BoutiqueObtenue,
             statut = texte,
             voyant = voyant.ToString().ToLowerInvariant(),
+            // Change a chaque nouvelle version du tableau : la page ouverte se recharge alors seule.
+            version = Tableau.Version,
         });
     }
 
@@ -541,8 +643,8 @@ internal sealed class ApplicationIcone : ApplicationContext
             {
                 Journal.Ecrire(_moteur.Stockage, "Erreur du scan : " + e);
             }
-            try { await Task.Delay(Intervalle, _annulation.Token); }
-            catch (TaskCanceledException) { break; }
+            try { await _moteur.AttendreAsync(Intervalle, _annulation.Token); }
+            catch (OperationCanceledException) { break; }
         }
     }
 
@@ -626,6 +728,8 @@ internal static class Program
             try { Process.GetCurrentProcess().PriorityClass = ProcessPriorityClass.BelowNormal; } catch (Exception) { }
             return Analyse.LireVers(args[1], args[2]);
         }
+        if (args.Length >= 4 && args[0] == "--chemins")
+            return Analyse.Chemins(args[1], args[2], args[3]);
         if (args.Length >= 2 && args[0] == "--apercu")
             return Apercu(args[1], args.Contains("--vide"));
         if (args.Length >= 2 && args[0] == "--test-serveur")
@@ -637,6 +741,8 @@ internal static class Program
             Thread.Sleep(TimeSpan.FromSeconds(8));
             return serveur.Adresse == null ? 1 : 0;
         }
+        if (args.Length >= 2 && args[0] == "--tableau")
+            return TableauSeul(args[1], Option(args, "--replays") ?? DossierReplays, int.TryParse(Option(args, "--minutes"), out var m) ? m : 10);
         if (args.Length >= 2 && args[0] == "--demarrage")
         {
             if (args[1] == "on") Demarrage.Activer(); else Demarrage.Desactiver();
@@ -675,6 +781,37 @@ internal static class Program
     {
         var i = Array.IndexOf(args, nom);
         return i >= 0 && i + 1 < args.Length ? args[i + 1] : null;
+    }
+
+    // Verification : le tableau et ses boutons, sans icone ni petite fenetre, sur un dossier de donnees a part.
+    private static int TableauSeul(string donnees, string replays, int minutes)
+    {
+        var stockage = new Stockage(donnees);
+        var moteur = new Moteur(replays, stockage);
+        moteur.Enregistrer();
+        string Etat()
+        {
+            var resume = stockage.Resumer();
+            var statut = moteur.Statut;
+            return System.Text.Json.JsonSerializer.Serialize(new
+            {
+                total = resume.Total,
+                statut = statut.Texte,
+                voyant = statut.Etat switch { EtatMoteur.Attente => "vert", EtatMoteur.Lecture => "orange", EtatMoteur.Erreurs or EtatMoteur.PasDeReplays => "rouge", _ => "gris" },
+                version = Tableau.Version,
+            });
+        }
+        using var serveur = new ServeurLocal(Tableau.Chemin(stockage), Etat, new ActionsTableau(moteur));
+        serveur.Demarrer();
+        File.WriteAllText(Path.Combine(donnees, "adresse.txt"), serveur.Adresse ?? "aucune");
+        var fin = DateTime.Now.AddMinutes(minutes);
+        while (DateTime.Now < fin)
+        {
+            moteur.Scanner();
+            moteur.Enregistrer();
+            try { moteur.AttendreAsync(TimeSpan.FromSeconds(10), CancellationToken.None).Wait(); } catch (AggregateException) { }
+        }
+        return 0;
     }
 
     // Verification visuelle : dessine la petite fenetre dans des images, sans rien afficher.

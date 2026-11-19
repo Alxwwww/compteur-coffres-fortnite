@@ -34,6 +34,10 @@ public sealed class Donnees
     public Calage? Calage { get; set; }
     // Coffres ouverts avant d'utiliser le compteur, ajoutes a la main.
     public int CoffresAvant { get; set; }
+    // Chance d'avoir l'acces a la boutique par coffre (1 sur N), si le joueur la change dans les reglages du tableau.
+    public int? CoteBoutique { get; set; }
+    // Le joueur a indique avoir eu l'acces a la boutique (le replay ne dit pas toujours quel tresor a ete remis).
+    public DateTimeOffset? BoutiqueObtenue { get; set; }
     public ReglagesFenetre Fenetre { get; set; } = new();
     public List<Partie> Parties { get; set; } = new();
     public List<Echec> Echecs { get; set; } = new();
@@ -43,7 +47,8 @@ public sealed class Donnees
 
 /// <summary>Tout ce que la petite fenetre affiche, calcule d'un coup.</summary>
 public sealed record Resume(int Total, int? Quete, int? DernierePartie, int SessionCoffres, int SessionParties,
-    int Casses, int CassesAPied, int CassesVoiture, int Parties, double ChanceBoutique, int? TotalEquipe, int? DerniereEquipe);
+    int Casses, int CassesAPied, int CassesVoiture, int Parties, double ChanceBoutique, int? TotalEquipe, int? DerniereEquipe,
+    bool BoutiqueObtenue = false);
 
 public sealed class Stockage
 {
@@ -87,10 +92,32 @@ public sealed class Stockage
         Donnees.FichiersVus.Add(partie.Fichier);
         Donnees.Echecs.RemoveAll(e => e.Fichier == partie.Fichier);
         // Un replay renomme par Fortnite ou relu garde la meme cle : on remplace, on ne compte pas deux fois.
-        var existante = Donnees.Parties.FindIndex(p => p.Cle == partie.Cle);
+        // Une partie importee porte le nom de son replay : la lecture de ce replay la remplace.
+        var existante = Donnees.Parties.FindIndex(p => p.Cle == partie.Cle || (partie.Fichier != "" && p.Fichier == partie.Fichier));
         if (existante >= 0) Donnees.Parties[existante] = partie;
         else Donnees.Parties.Add(partie);
         Donnees.Parties.Sort((a, b) => a.Fin.CompareTo(b.Fin));
+    }
+
+    /// <summary>Ajoute les parties d'une sauvegarde importee qui ne sont pas deja la.</summary>
+    public (int Ajoutees, int Ignorees) Fusionner(IEnumerable<Partie> importees)
+    {
+        int ajoutees = 0, ignorees = 0;
+        foreach (var partie in importees)
+        {
+            if (Donnees.Parties.Any(p => p.Cle == partie.Cle || (partie.Fichier != "" && p.Fichier == partie.Fichier))) { ignorees++; continue; }
+            Donnees.Parties.Add(partie);
+            ajoutees++;
+        }
+        Donnees.Parties.Sort((a, b) => a.Fin.CompareTo(b.Fin));
+        return (ajoutees, ignorees);
+    }
+
+    /// <summary>La chance par coffre d'avoir l'acces a la boutique : celle d'Epic, ou celle choisie dans les reglages.</summary>
+    internal Cote CoteBoutique()
+    {
+        var defaut = Tresors.Cotes.First(c => c.Type == Tresors.Boutique);
+        return Donnees.CoteBoutique is int n && n > 0 ? defaut with { UnSur = n } : defaut;
     }
 
     public void NoterEchec(string fichier, string message, bool definitif = false)
@@ -131,7 +158,9 @@ public sealed class Stockage
     }
 
     /// <summary>Tes parties pour le calcul des chances : chaque coffre avec l'heure de sa partie (heures au tresor).</summary>
-    public IEnumerable<(int Coffres, DateTime Utc)> CoffresDates() => Comptees().Select(p => (p.Total, p.Fin.UtcDateTime));
+    /// <param name="equipe">Ajoute les coffres de tes coequipiers : un tresor trouve par l'un d'eux est remis a toute l'escouade.</param>
+    public IEnumerable<(int Coffres, DateTime Utc)> CoffresDates(bool equipe = false) =>
+        Comptees().Select(p => (p.Total + (equipe ? p.CoffresEquipe : 0), p.Fin.UtcDateTime));
 
     public Resume Resumer()
     {
@@ -139,7 +168,7 @@ public sealed class Stockage
         {
             var session = Session();
             var parties = Comptees();
-            var coteBoutique = Tresors.Cotes.First(c => c.Type == Tresors.Boutique);
+            var coteBoutique = CoteBoutique();
             var escouade = Donnees.Fenetre.Escouade;
             return new Resume(
                 Total(),
@@ -153,7 +182,8 @@ public sealed class Stockage
                 parties.Count,
                 Tresors.Chance(coteBoutique, CoffresDates(), Donnees.CoffresAvant),
                 escouade ? parties.Sum(p => p.Total + p.CoffresEquipe) + Donnees.CoffresAvant : null,
-                escouade && parties.Count > 0 ? parties[^1].Total + parties[^1].CoffresEquipe : null);
+                escouade && parties.Count > 0 ? parties[^1].Total + parties[^1].CoffresEquipe : null,
+                Donnees.BoutiqueObtenue != null);
         }
     }
 }

@@ -1,5 +1,11 @@
 # Logiciels et données de tiers
 
+## Fortnite Chest Counter (Jose-AE)
+
+https://github.com/Jose-AE/fortnite-chest-counter
+
+La présentation du tableau (gros total, bascule « Rien que toi / Avec tes coéquipiers », tuiles de couleur, graphique empilé, zone de dépôt des replays, import et export) s'inspire de ce site. Aucun code, icône ni image n'en est repris : ce projet est sous licence AGPL-3.0, et le tableau a été écrit à part. Le compteur sait aussi importer les fichiers exportés par ce site.
+
 ## ChestCounter (LED-N)
 
 https://github.com/LED-N/Fortnite-ChestCounter

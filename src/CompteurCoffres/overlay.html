@@ -69,7 +69,7 @@ async function rafraichir() {
     l.push(...ligne("Cassés", nf.format(e.casses.total), nf.format(e.casses.aPied) + " à pied · " + nf.format(e.casses.voiture) + " en voiture"));
     if (e.quete != null) l.push(...ligne("Quête", e.quete >= e.objectif ? nf.format(e.quete) : nf.format(e.quete) + " / " + nf.format(e.objectif), e.quete >= e.objectif ? "terminée ✓" : ""));
     if (e.equipe != null) l.push(...ligne("Escouade", nf.format(e.equipe), e.derniereEquipe != null ? "dernière " + nf.format(e.derniereEquipe) : ""));
-    l.push(...ligne("Boutique", e.boutique, "chance cumulée"));
+    l.push(...(e.boutiqueObtenue ? ligne("Boutique", "obtenue ✓", "accès à la boutique") : ligne("Boutique", e.boutique, "chance cumulée")));
     $("lignes").replaceChildren(...l);
     $("statut").textContent = e.statut;
     $("voyant").style.background = "var(--" + e.voyant + ")";

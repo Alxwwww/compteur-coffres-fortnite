@@ -13,9 +13,12 @@ La quête « Ouvrir des coffres » s'arrête à 1 000 : ce compteur continue.
 - **Coffres cassés** : à la pioche, en voiture, et les coffres qui tombent quand tu casses leur support (retrouvés grâce à leur butin).
 - **Total d'escouade** (facultatif) : tes coffres + ceux de tes coéquipiers, amis ou randoms.
 - **Tes chances** pour chaque trésor, avec les chances publiées par Epic et les **heures au trésor** où elles sont boostées.
-- **Ta collection** : les trésors remis par un coffre doré, avec leur nom.
+- **Ta collection** : les trésors remis par un coffre doré, avec leur nom, et les « trésors sans nom » (le replay dit qu'un trésor a été remis, pas lequel). Une bulle près de l'horloge te prévient après la partie. Quand tu as eu l'accès à la boutique, coche « J'ai eu l'accès à la boutique » : le compteur affiche « obtenue ✓ » à la place de ta chance.
 - **Petite fenêtre** toujours au premier plan, déplaçable, avec un voyant qui dit si tout marche.
-- **Tableau détaillé** dans le navigateur (`http://localhost:8766`) : total, moyenne, records, graphique, détail par mode, par type de coffre et par partie.
+- **Tableau détaillé** dans le navigateur (`http://localhost:8766`) : gros total, chance d'avoir eu l'accès à la boutique, bascule « Rien que toi / Avec tes coéquipiers », tuiles (par toi, coéquipiers, par partie, meilleure partie, par minute), graphique par partie ou par jour, détail par mode, par type de coffre et par partie. Il se recharge tout seul après chaque partie.
+- **Replays d'un autre PC** : dépose des replays ou un dossier dans le tableau, ils sont comptés comme les autres.
+- **Export et import** de toutes tes parties dans un fichier `.json`, pour les garder ou les reprendre sur un autre PC. Les exports du site [Fortnite Chest Counter](https://fortnite-chest-counter.vercel.app/) sont acceptés aussi.
+- **Réglages dans le tableau** : coffres hors replays, valeur de ta quête, chance de la boutique, relecture de tous les replays.
 - **Version OBS** de la petite fenêtre (`http://localhost:8766/overlay`, fond transparent).
 - **Suivi de quête** : tu indiques ce que ta quête affiche, le compteur s'aligne dessus.
 - **Coffres d'avant le compteur** : à ajouter à la main, ou à estimer depuis l'onglet Carrière.
@@ -35,7 +38,9 @@ Le fichier [`LISEZ-MOI.txt`](LISEZ-MOI.txt) détaille tout ça.
 
 ## Comment ça marche
 
-Le programme lit uniquement les fichiers `.replay` que Fortnite enregistre dans `%LOCALAPPDATA%\FortniteGame\Saved\Demos`, une fois la partie finie. Il ne touche pas au jeu, ne lit pas sa mémoire, ne se connecte à aucun compte et **n'envoie rien sur Internet**.
+Le programme lit uniquement les fichiers `.replay` que Fortnite enregistre dans `%LOCALAPPDATA%\FortniteGame\Saved\Demos`, une fois la partie finie, et ceux que tu déposes dans le tableau. Il ne touche pas au jeu, ne lit pas sa mémoire, ne se connecte à aucun compte et **n'envoie rien sur Internet**.
+
+Le tableau est servi par le programme sur `localhost`, visible seulement sur ton PC. Ses boutons (ajout de replays, import, réglages) envoient leurs demandes avec un en-tête que les autres sites ne peuvent pas ajouter sans l'accord du programme, qui ne le donne jamais : une page web ouverte ailleurs ne peut rien y changer.
 
 - Chaque coffre indique dans le replay qui l'a fouillé (`SearchingPawn`) : il compte comme ouvert quand c'est toi.
 - Un `bAlreadySearched` remis à `false` signale un coffre rechargé : il peut être recompté.
@@ -48,7 +53,7 @@ Le programme lit uniquement les fichiers `.replay` que Fortnite enregistre dans 
 **Limites** :
 - Seules les parties jouées sur ce PC, avec les replays activés, sont comptées.
 - Un coffre ouvert par un coéquipier à plus de 150 m environ n'est pas dans ton replay.
-- Pour beaucoup de trésors, le replay dit seulement qu'un trésor a été remis à ton escouade, sans dire lequel.
+- Hors coffre doré, le replay dit seulement qu'un trésor a été remis à ton escouade (`GA_TreasureHandler_Generic`, le même pour tous les trésors), sans dire lequel : l'accès à la boutique ne peut donc pas être reconnu tout seul.
 - Une mise à jour de Fortnite peut casser la lecture : le voyant passe alors au rouge.
 
 ## Compiler
@@ -61,6 +66,7 @@ Note : le nom d'assemblage doit contenir `ReplayReader` (`CompteurCoffres.Replay
 
 - La méthode de comptage (signature des coffres, coffres rechargés, coffres tombés, modes comptés), les chances et le calendrier des heures au trésor (`tresors.json`) viennent du projet libre [ChestCounter](https://github.com/LED-N/Fortnite-ChestCounter) de LED-N (licence MIT). Le code a été réécrit pour ce programme.
 - Lecture des replays : [FortniteReplayReader](https://github.com/Shiqan/FortniteReplayDecompressor) de Shiqan (licence MIT), via NuGet.
+- La présentation du tableau s'inspire du site [Fortnite Chest Counter](https://github.com/Jose-AE/fortnite-chest-counter) de Jose-AE. Aucun code n'en est repris (il est sous licence AGPL-3.0).
 
 Voir [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
 
